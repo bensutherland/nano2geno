@@ -1,0 +1,6 @@
+skip
+*.cfg
+*.log
+*.txt
+*.js
+workspace
