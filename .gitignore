@@ -5,3 +5,5 @@ skip
 *.js
 workspace
 *.fastq
+*.index*
+
