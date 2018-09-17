@@ -4,3 +4,4 @@ skip
 *.txt
 *.js
 workspace
+*.fastq
