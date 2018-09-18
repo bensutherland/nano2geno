@@ -17,6 +17,10 @@ If you are going to do separate analyses of different libraries, these will matt
 This will export all of the files as `03_basecalled/all_reads.fastq`     
 `find ./03_basecalled/workspace/pass -name "*.fastq" | while read file ; do cat $file >> 03_basecalled/all_reads.fastq ; done`
 
+Do some fastqc on this data:    
+`fastqc 03_basecalled/all_reads.fastq -o 03_basecalled/fastqc -t 5`   
+`multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc`    
+
 ### De-multiplexing the inner library
 To add
 
@@ -41,8 +45,7 @@ All reads should be accounted for if this worked correctly.
 
 Probably not the file you are looking for is entitled: `03_basecalled/all_reads.fastq.index.gzi`    
 
-Nanopolish needs a fasta file, so use Fastq to fasta:
-`fastq_to_fasta.py 03_basecalled/all_reads.fastq 03_basecalled/all_reads.fa`
+
 
 
 
@@ -54,6 +57,16 @@ Index:
 
 Align:
 `minimap2 -ax map-ont ch_WG00004_7.20170208.fasta nano2geno/03_basecalled/all_reads.fastq > aln.sam`
+
+Use this script to automate:    
+`.01_scripts/02_align.sh`
+
+Observe the stats on the alignment:   
+`samtools stats 04_mapped/all_reads.sorted.bam > 04_mapped/all_reads.ali.stats.txt`
+
+Collect information on coverage:   
+`grep "^COV" 04_mapped/all_reads.ali.stats.txt > 04_mapped/all_reads.coverage.tx`
+
 
 Remember, you can use 
 `samtools flagstat aln.sam`
@@ -72,3 +85,22 @@ Use Nanopolish to compute the consensus sequence
 
 Computes the consensus sequence of the genome assembly based on the nanopore reads: 
 `python /home/ben/Programs/nanopolish/scripts/nanopolish_makerange.py ~/Documents/genomes/GCF_002021735.1_Okis_V1_genomic.fna | parallel --results nanopolish.results -P 8 nanopolish variants --consensus -o polished.{1}.vcf -w {1} -r 03_basecalled/all_reads.fa -b aln_new.sorted.bam -g ~/Documents/genomes/GCF_002021735.1_Okis_V1_genomic.fna -t 4 --min-candidate-frequency 0.1`
+
+
+
+Following the porecamp.github.io tutorial:    
+Variant calling with nanopolish:   
+Three steps:    
+1. align reads w/ aligner (done, this is `04_mapped/all_reads.sorted.bam`)
+2. align events w/ nanopolish eventalign
+3. call vcf with nanopolished variants
+
+
+Nanopolish needs a fasta file, so use Fastq to fasta:
+`fastq_to_fasta.py 03_basecalled/all_reads.fastq 03_basecalled/all_reads.fa`
+
+And this also needs to be indexed by nanopolish:    
+`nanopolish index -d ./02_raw_data/skip -s 03_basecalled/sequencing_summary.txt 03_basecalled/all_reads.fa`
+
+Then align events w/ nanopolish eventalign:   
+`nanopolish eventalign --reads 03_basecalled/all_reads.fa -b 04_mapped/all_reads.sorted.bam -g ~/Documents/genomes/GCF_002872995.1_Otsh_v1.0_genomic.fna --sam | samtools view -bS - | samtools sort -o 04_mapped/all_reads.eventalign.bam -`
