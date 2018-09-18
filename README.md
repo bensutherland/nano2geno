@@ -1,10 +1,11 @@
 # nano2geno
 Genotyping from nanopore data
 
+Currently in **Development mode only**
 Disclaimer: this is a simple pipeline that comes with no guarantees. At the moment it is purely for the author's use to better understand nanopore data.   
 
 #### Requirements
-Albacore basecaller
+Albacore basecaller     
 Nanopolish
 
 ### Basecalling
@@ -19,6 +20,18 @@ This will export all of the files as `03_basecalled/all_reads.fastq`
 ### De-multiplexing the inner library
 To add
 
+
+http://porecamp.github.io/2016/tutorials/mappingtute.html
+
+
+
+
+
+
+
+## NEEDS CORRECTION
+
+
 ### Calling SNPs
 #### 1. Data preprocessing
 As described by @jts, one needs to index the output of the albacore basecaller:   
@@ -26,9 +39,10 @@ As described by @jts, one needs to index the output of the albacore basecaller:
 Where the -d flag directs towards the fast5 files, and the -s flag points towards the output of albacore sequence summary, and the final output of the albacore basecaller. 
 All reads should be accounted for if this worked correctly. 
 
-Importantly! the fasta file you are looking for is entitled: `03_basecalled/all_reads.fastq.index.gzi`    
+Probably not the file you are looking for is entitled: `03_basecalled/all_reads.fastq.index.gzi`    
 
-
+Nanopolish needs a fasta file, so use Fastq to fasta:
+`fastq_to_fasta.py 03_basecalled/all_reads.fastq 03_basecalled/all_reads.fa`
 
 
 
@@ -36,21 +50,25 @@ This requires that you align the fastq against your genome first to produce a ba
 minimap2 seems to be the go-to for nanopore data currently. 
 
 Index:    
-`minimap2 -d Otsh_subset.mmi ch_WG00004_7.20170208.fasta`    
+`minimap2 -d Otsh_subset.mmi the_genome_assembly.fasta`    
 
 Align:
 `minimap2 -ax map-ont ch_WG00004_7.20170208.fasta nano2geno/03_basecalled/all_reads.fastq > aln.sam`
 
 Remember, you can use 
-samtools flagstat aln.sam 
+`samtools flagstat aln.sam`
 
 and to go from sam to bam:
 `samtools view -Sb aln.sam > aln.bam`
 
-
-Further following jts:    
-`bwa index ch_WG00004_7.20170208.fasta`
-Align basecalled reads to the draft genome:    
-``
+Sort
+`samtools sort aln_new.bam -o aln_new.sorted.bam`
 
 
+Make sure to Nanopolish index your fasta file as well.  
+
+Use Nanopolish to compute the consensus sequence
+`python /home/ben/Programs/nanopolish/scripts/nanopolish_makerange.py`
+
+Computes the consensus sequence of the genome assembly based on the nanopore reads: 
+`python /home/ben/Programs/nanopolish/scripts/nanopolish_makerange.py ~/Documents/genomes/GCF_002021735.1_Okis_V1_genomic.fna | parallel --results nanopolish.results -P 8 nanopolish variants --consensus -o polished.{1}.vcf -w {1} -r 03_basecalled/all_reads.fa -b aln_new.sorted.bam -g ~/Documents/genomes/GCF_002021735.1_Okis_V1_genomic.fna -t 4 --min-candidate-frequency 0.1`
