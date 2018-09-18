@@ -13,3 +13,4 @@ workspace
 nanopolish.results
 *.html
 *.zip
+*.vcf
