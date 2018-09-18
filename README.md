@@ -21,7 +21,7 @@ Do some fastqc on this data:
 `fastqc 03_basecalled/all_reads.fastq -o 03_basecalled/fastqc -t 5`   
 `multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc`    
 
-### De-multiplexing the inner library
+### Demultiplexing the inner library
 Create a fasta file with the adapters named
 `grep -vE '^index' ./IonCode768.csv | awk -F"," '{ print ">"$2 "\n" $3 $5 "\n" }' -  | grep -vE '^$' - > IonCode768.fa`
 
@@ -31,6 +31,14 @@ Run cutadapt using this file:
 Then re-run it on the untrimmed.fastq with the reverse complement:    
 `~/Documents/01_nanopore/nano2geno$ cutadapt -a file:./../IonCode768_revcomp.fa --untrimmed-output untrimmed_both.fastq -o 03b_demultiplexed/reverse_demultiplex/trimmed-{name}.fastq 03b_demultip
 lexed/untrimmed.fastq`    
+
+And finally join these two files:    
+`01_scripts/collect_samples.sh`
+(note: currently expect warnings for those that weren't found in the second round)
+
+Audit the number of reads per sample, will produce `reads_per_sample2.txt`:
+`01_scripts/reads_per_sample.sh`
+(note: contains code from: 'moving every second row to a new column with awk')
 
 (note this does not include a reverse complement adapters, but it should catch the barcode in the other side. May need to make a reverse complement adapter set to trim the adapters off)
 To reverse complement, from Pierre Lindenbaum Biostars : https://www.biostars.org/p/189325/ 
