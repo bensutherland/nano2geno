@@ -22,7 +22,21 @@ Do some fastqc on this data:
 `multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc`    
 
 ### De-multiplexing the inner library
-To add
+Create a fasta file with the adapters named
+`grep -vE '^index' ./IonCode768.csv | awk -F"," '{ print ">"$2 "\n" $3 $5 "\n" }' -  | grep -vE '^$' - > IonCode768.fa`
+
+Run cutadapt using this file:   
+`cutadapt -a file:./../IonCode768.fa --untrimmed-output untrimmed.fastq -o 03b_demultiplexed/trimmed-{name}.fastq 03_basecalled/all_reads.fastq`
+
+Then re-run it on the untrimmed.fastq with the reverse complement:    
+`~/Documents/01_nanopore/nano2geno$ cutadapt -a file:./../IonCode768_revcomp.fa --untrimmed-output untrimmed_both.fastq -o 03b_demultiplexed/reverse_demultiplex/trimmed-{name}.fastq 03b_demultip
+lexed/untrimmed.fastq`    
+
+(note this does not include a reverse complement adapters, but it should catch the barcode in the other side. May need to make a reverse complement adapter set to trim the adapters off)
+To reverse complement, from Pierre Lindenbaum Biostars : https://www.biostars.org/p/189325/ 
+` cat input.fa | while read L; do  echo $L; read L; echo "$L" | rev | tr "ATGC" "TACG" ; done`
+
+`cat IonCode768.fa | while read L; do echo $L; read L; echo "$L" | rev | tr "ATGC" "TACG" ; done | sed -e "s/^M//" > IonCode768_revcomp.fa`
 
 
 http://porecamp.github.io/2016/tutorials/mappingtute.html
@@ -104,3 +118,11 @@ And this also needs to be indexed by nanopolish:
 
 Then align events w/ nanopolish eventalign:   
 `nanopolish eventalign --reads 03_basecalled/all_reads.fa -b 04_mapped/all_reads.sorted.bam -g ~/Documents/genomes/GCF_002872995.1_Otsh_v1.0_genomic.fna --sam | samtools view -bS - | samtools sort -o 04_mapped/all_reads.eventalign.bam -`
+
+Index the new file that nanopolish eventalign produced:    
+`samtools index 04_mapped/all_reads.eventalign.bam`   
+
+Then run the following, adding the window of interest:   
+`nanopolish variants --progress -t 2 --reads 03_basecalled/all_reads.fa -o all_reads.eventalign.vcf -b 04_mapped/all_reads.sorted.bam -g ~/Documents/genomes/GCF_002872995.1_Otsh_v1.0_genomic.fna --snp --ploidy 4 -w NC_037115.1:39000000-3902000`
+
+However, this produces a vcf without anything in it. I need to be able to find a section of the bam with SNPs actually present. Would I do this per sample? 
