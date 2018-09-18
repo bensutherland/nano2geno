@@ -6,4 +6,8 @@ skip
 workspace
 *.fastq
 *.index*
-
+*.fa
+*.bam
+*.sam
+*.bai
+nanopolish.results
