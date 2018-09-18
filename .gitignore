@@ -11,3 +11,5 @@ workspace
 *.sam
 *.bai
 nanopolish.results
+*.html
+*.zip
