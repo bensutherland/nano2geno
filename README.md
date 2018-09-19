@@ -32,7 +32,6 @@ If you don't care what nanopore barcode was on your library, take the files and 
 
 ### 2. Data quality check
 Do some fastqc on this data:    
-`fastqc`
 `fastqc 03_basecalled/all_reads.fastq -o 03_basecalled/fastqc -t 5`   
 `multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc`    
 
