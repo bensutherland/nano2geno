@@ -15,3 +15,5 @@ nanopolish.results
 *.zip
 *.vcf
 *.swo
+*.mmi
+*#
