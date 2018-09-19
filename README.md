@@ -17,7 +17,7 @@ inner barcodes
 
 ### 1. Basecalling
 If you have fast5 files to basecall, move the folder of fast5 files to `02_raw_data`.    
-If you have fastq files already, collect these and put in `03_basecalled/all_reads.fastq`, and skip to the next step.         
+If you have fastq files already, collect these and put in `03_basecalled/all_reads.fastq`, and skip to the next step. (e.g. `cp -r ../raw_data/PBT_trial*/*.fastq ./03_basecalled` then cat)         
 
 Run `read_fast5_basecaller.py` using the following:    
 `./01_scripts/01_basecall.sh`     
@@ -32,6 +32,7 @@ If you don't care what nanopore barcode was on your library, take the files and 
 
 ### 2. Data quality check
 Do some fastqc on this data:    
+`fastqc`
 `fastqc 03_basecalled/all_reads.fastq -o 03_basecalled/fastqc -t 5`   
 `multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc`    
 

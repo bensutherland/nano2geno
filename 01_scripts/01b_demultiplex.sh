@@ -28,5 +28,5 @@ cutadapt -a file:$BARCODE_FOLDER/$FORWARD_BARCODES \
 cutadapt -a file:$BARCODE_FOLDER/$REVERSE_BARCODES \
     --untrimmed-output $DEMULTIPLEXED_FOLDER/$REVERSE_FOLDER/reverse_untrimmed.fastq \
     -o $DEMULTIPLEXED_FOLDER/$REVERSE_FOLDER/trimmed-{name}.fastq \
-    $DEMULTIPLEXED_FOLDER/$FORWARD_FOLDER/forward_untrimmed.fastq # this is the untrimmed from first 
+    $DEMULTIPLEXED_FOLDER/$FORWARD_FOLDER/forward_untrimmed.fastq # this is the file containing untrimmed reads from the first pass.
 
