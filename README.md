@@ -12,8 +12,8 @@ samtools
 
 #### Inputs
 fast5 or fastq    
-genome    
-inner barcodes    
+genome.fa    
+inner barcodes (.csv or .fa)    
 
 ### 1. Basecalling
 If you have fast5 files to basecall, move the folder of fast5 files to `02_raw_data`.    
@@ -74,28 +74,25 @@ In this case, use the subset sections of the reference that were identified in S
 Select one of the sample datafiles and align this against the reference genome.    
 
 
+### 6. Call SNPs
+The demultiplexed fastq files are in `04_samples`. Move any files that you don't want to analyze into the folder `04_samples/temp_storage`, and keep a few files you want to genotype in the main folder.    
+
+Index your reference genome using minimap2    
+`minimap2 -d Otsh_subset.mmi the_genome_assembly.fasta`    
+
+Align the sample fastq files against the reference genome by editing the path to the genome and running the following:    
+`.01_scripts/02_align.sh`
+
+This will do the alignment, as well as provide some stats including alignment and coverage statistics under the same name as the fastq file.    
+
+
 
 ## NEEDS CORRECTION
-### Calling SNPs
 #### 1. Data preprocessing
 As described by @jts, one needs to index the output of the albacore basecaller:   
 `nanopolish index -d ./02_raw_data/skip -s 03_basecalled/sequencing_summary.txt 03_basecalled/all_reads.fastq`   
 Where the -d flag directs towards the fast5 files, and the -s flag points towards the output of albacore sequence summary, and the final output of the albacore basecaller. 
 All reads should be accounted for if this worked correctly. 
-
-Probably not the file you are looking for is entitled: `03_basecalled/all_reads.fastq.index.gzi`    
-
-This requires that you align the fastq against your genome first to produce a bam file. 
-minimap2 seems to be the go-to for nanopore data currently. 
-
-Index:    
-`minimap2 -d Otsh_subset.mmi the_genome_assembly.fasta`    
-
-Align:
-`minimap2 -ax map-ont ch_WG00004_7.20170208.fasta nano2geno/03_basecalled/all_reads.fastq > aln.sam`
-
-Use this script to automate:    
-`.01_scripts/02_align.sh`
 
 Observe the stats on the alignment:   
 `samtools stats 04_mapped/all_reads.sorted.bam > 04_mapped/all_reads.ali.stats.txt`
