@@ -7,16 +7,30 @@ Disclaimer: this is a simple pipeline that comes with no guarantees. At the mome
 #### Requirements
 Albacore basecaller     
 Nanopolish
+minimap2    
+samtools    
 
-### Basecalling
-If doing local basecalling, move the folder containing the fast5 files to be basecalled to `02_raw_data`, and run the script `01_scripts/01_basecall.sh`. This script will call the python script `read_fast5_basecaller.py`.     
-Your output will be put into the folder `03_basecalled`, specifically into the subfolder `workspace`, which will contain reads labeled as `pass/fail/calibration_strands`. Within the Pass folder will be different barcode subfolders, and within each of these will be the called fastq files.      
+#### Inputs
+fast5 or fastq    
+genome    
+inner barcodes    
 
-If you are going to do separate analyses of different libraries, these will matter, but if not, then you can just take all of the files and combine them into one big fastq file.
+### 1. Basecalling
+If you have fast5 files to basecall, move the folder of fast5 files to `02_raw_data`.    
+If you have fastq files already, collect these and put in `03_basecalled/all_reads.fastq`, and skip to the next step.         
 
-This will export all of the files as `03_basecalled/all_reads.fastq`     
+Run `read_fast5_basecaller.py` using the following:    
+`./01_scripts/01_basecall.sh`     
+
+Output will be in `03_basecalled/workspace`   
+Reads will be in subfolders depending on `pass/fail/calibration_strands` 
+In the Pass folder will be different barcode subfolders containing called fastq files for that barcode.   
+
+If you don't care what nanopore barcode was on your library, take the files and combine into one large fastq as `03_basecalled/all_reads.fastq`     
 `find ./03_basecalled/workspace/pass -name "*.fastq" | while read file ; do cat $file >> 03_basecalled/all_reads.fastq ; done`
+(make sure to remove any previous version of all_reads.fastq)   
 
+### 2. Data quality check
 Do some fastqc on this data:    
 `fastqc 03_basecalled/all_reads.fastq -o 03_basecalled/fastqc -t 5`   
 `multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc`    
