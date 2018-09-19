@@ -1,13 +1,26 @@
+# 
+# 
+
+# Clear space
+# rm(list=ls())
+
 setwd("~/Documents/01_nanopore/nano2geno")
 library(ggplot2)
 
 # 
-cov <- read.table("04_mapped/all_reads.coverage.txt", sep = "\t")
+target.sample <- "trimmed-IonCode_0135"
+# target.sample <- "trimmed-IonCode_0151"
+# target.sample <- "trimmed-IonCode_0366"
+
+filename <- paste("04_mapped/", target.sample, ".cov.stats.txt", sep = "")
+
+cov <- read.table(filename, sep = "\t")
+
+dim(cov)
+
 head(cov)
 cov[1,]
 ggplot(cov, aes(x=V3, y=V4)) + geom_bar(stat='identity') + xlab('coverage') + ylab('count')
-
-
 
 # I think what this is showing is the number of bases with the different depths of coverage... 
 # It must be bases b/c it is far larger than the number of reads
