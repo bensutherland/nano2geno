@@ -36,43 +36,33 @@ Do some fastqc on this data:
 `fastqc 03_basecalled/all_reads.fastq -o 03_basecalled/fastqc -t 5`   
 `multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc`    
 
-### Demultiplexing the inner library
-Create a fasta file with the adapters named
+### 3. Demultiplexing the inner library
+#### Create fasta from .csv, and also make a reverse-complement
+My data is kept in `IonCode768.csv`     
+
+Make csv file a fasta with named adapters:    
 `grep -vE '^index' ./IonCode768.csv | awk -F"," '{ print ">"$2 "\n" $3 $5 "\n" }' -  | grep -vE '^$' - > IonCode768.fa`
 
-Run cutadapt using this file:   
-`cutadapt -a file:./../IonCode768.fa --untrimmed-output untrimmed.fastq -o 03b_demultiplexed/trimmed-{name}.fastq 03_basecalled/all_reads.fastq`
-
-Then re-run it on the untrimmed.fastq with the reverse complement:    
-`~/Documents/01_nanopore/nano2geno$ cutadapt -a file:./../IonCode768_revcomp.fa --untrimmed-output untrimmed_both.fastq -o 03b_demultiplexed/reverse_demultiplex/trimmed-{name}.fastq 03b_demultip
-lexed/untrimmed.fastq`    
-
-And finally join these two files:    
-`01_scripts/collect_samples.sh`
-(note: currently expect warnings for those that weren't found in the second round)
-
-Audit the number of reads per sample, will produce `reads_per_sample2.txt`:
-`01_scripts/reads_per_sample.sh`
-(note: contains code from: 'moving every second row to a new column with awk')
-
-(note this does not include a reverse complement adapters, but it should catch the barcode in the other side. May need to make a reverse complement adapter set to trim the adapters off)
 To reverse complement, from Pierre Lindenbaum Biostars : https://www.biostars.org/p/189325/ 
-` cat input.fa | while read L; do  echo $L; read L; echo "$L" | rev | tr "ATGC" "TACG" ; done`
+`cat IonCode768.fa | while read L; do echo $L; read L; echo "$L" | rev | tr "ATGC" "TACG" ; done | sed -e "s/^M//" > IonCode768_revcomp.fa`      
 
-`cat IonCode768.fa | while read L; do echo $L; read L; echo "$L" | rev | tr "ATGC" "TACG" ; done | sed -e "s/^M//" > IonCode768_revcomp.fa`
+#### Demultiplex
+Demultiplex using the forward adapter, then the reverse-complement adapter set on unidentified.   
+`./01_scripts/01b_demultiplex.sh`     
 
+Combine the files that were demultiplexed with forward adapter and with reverse-complemented adapter:     
+`01_scripts/collect_samples.sh`
+(note: currently expect warnings for combinations that weren't identified in the reverse complement adapter round, as there were much fewer reads remaining).     
 
-http://porecamp.github.io/2016/tutorials/mappingtute.html
+#### Evaluate results
+Calculate the number of reads per sample, to produce `reads_per_sample2.txt`:
+`01_scripts/reads_per_sample.sh`
+(note: contains code from website: 'moving every second row to a new column with awk')
 
-
-
-
-
+Note: still may need to remove the reverse complement adapter, perhaps with a full cutadapt run.   
 
 
 ## NEEDS CORRECTION
-
-
 ### Calling SNPs
 #### 1. Data preprocessing
 As described by @jts, one needs to index the output of the albacore basecaller:   
@@ -81,10 +71,6 @@ Where the -d flag directs towards the fast5 files, and the -s flag points toward
 All reads should be accounted for if this worked correctly. 
 
 Probably not the file you are looking for is entitled: `03_basecalled/all_reads.fastq.index.gzi`    
-
-
-
-
 
 This requires that you align the fastq against your genome first to produce a bam file. 
 minimap2 seems to be the go-to for nanopore data currently. 
