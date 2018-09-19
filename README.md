@@ -48,6 +48,8 @@ To reverse complement, from Pierre Lindenbaum Biostars : https://www.biostars.or
 #### Demultiplex
 Demultiplex using the forward adapter, then the reverse-complement adapter set on unidentified.   
 `./01_scripts/01b_demultiplex.sh`     
+Issue: this doesn't yet use parallel effectively, could implement w/ stacks_workflow cutadapt parallel approach, but this requires different input folders, so would have to break up into sections, or do each library separately (probably the best bet).    
+
 
 Combine the files that were demultiplexed with forward adapter and with reverse-complemented adapter:     
 `01_scripts/collect_samples.sh`
@@ -59,6 +61,18 @@ Calculate the number of reads per sample, to produce `reads_per_sample2.txt`:
 (note: contains code from website: 'moving every second row to a new column with awk')
 
 Note: still may need to remove the reverse complement adapter, perhaps with a full cutadapt run.   
+
+### 4. Determine section of genome containing amplicons
+Need the range in a bed file
+Then run the following to get an amplicon file of just the expected amplicons to align against
+`GENOME="ch_WG00004_7.20170208.fasta"; bedtools getfasta -fi $GENOME -bed ch_WG00004_9.20170224.designed.bed -fo ch_WG00004_7.20170208_extracted.fa`
+
+
+### 5. Align against reference genome
+In this case, use the subset sections of the reference that were identified in Step 4. above.    
+
+Select one of the sample datafiles and align this against the reference genome.    
+
 
 
 ## NEEDS CORRECTION
