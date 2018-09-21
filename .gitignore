@@ -15,5 +15,9 @@ nanopolish.results
 *.zip
 *.vcf
 *.swo
+*.swp
 *.mmi
 *#
+*.pdf
+*.Rhistory
+*.fai
