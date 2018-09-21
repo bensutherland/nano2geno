@@ -11,137 +11,89 @@ minimap2
 samtools    
 
 #### Inputs
-fast5 or fastq    
+fast5     
 genome.fa    
 inner barcodes (.csv or .fa)    
 
 ### 1. Basecalling
-If you have fast5 files to basecall, move the folder of fast5 files to `02_raw_data`.    
-If you have fastq files already, collect these and put in `03_basecalled/all_reads.fastq`, and skip to the next step. (e.g. `cp -r ../raw_data/PBT_trial*/*.fastq ./03_basecalled` then cat)         
+If you have fast5 files to basecall, move the folder of fast5 files to `02_raw_data`. Note that fast5 files will be needed to index the fastq for SNP calling later.     
+Note: for just getting stats on a fastq file without doing genotyping, collect fastq files and put in `03_basecalled/all_reads.fastq`, and skip to the next step. (e.g. `cp -r ../raw_data/PBT_trial*/*.fastq ./03_basecalled` then cat these files together into a fastq)         
 
-Run `read_fast5_basecaller.py` using the following:    
+Run `read_fast5_basecaller.py` recursively, with demultiplexing of nanopore barcodes on fast5 files within `02_raw_data` use the following:    
 `./01_scripts/01_basecall.sh`     
 
-Output will be in `03_basecalled/workspace`   
-Reads will be in subfolders depending on `pass/fail/calibration_strands` 
-In the Pass folder will be different barcode subfolders containing called fastq files for that barcode.   
+Output will be in `03_basecalled/workspace`, with reads inside folders `pass/fail/calibration_strands`, and reads in the `Pass` folder in different barcode subfolders containing fastq files for each barcode.    
 
-If you don't care what nanopore barcode was on your library, take the files and combine into one large fastq as `03_basecalled/all_reads.fastq`     
+If you don't care what nanopore barcode was on your library, combine the fastq files into `03_basecalled/all_reads.fastq`     
 `find ./03_basecalled/workspace/pass -name "*.fastq" | while read file ; do cat $file >> 03_basecalled/all_reads.fastq ; done`
-(make sure to remove any previous version of all_reads.fastq)   
+(make sure to remove any previous version of all_reads.fastq or else this will combine all to this)   
+(#todo: describe how to split this into sections to run in parallel)    
 
 ### 2. Data quality check
-Do some fastqc on this data:    
+Run fastqc on this data:    
 `fastqc 03_basecalled/all_reads.fastq -o 03_basecalled/fastqc -t 5`   
 `multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc`    
 
 ### 3. Demultiplexing the inner library
-#### Create fasta from .csv, and also make a reverse-complement
+#### a. Create fasta from .csv, and also make a reverse-complement
 My data is kept in `IonCode768.csv`     
 
-Make csv file a fasta with named adapters:    
+Custom: make csv file a fasta with named adapters:    
 `grep -vE '^index' ./IonCode768.csv | awk -F"," '{ print ">"$2 "\n" $3 $5 "\n" }' -  | grep -vE '^$' - > IonCode768.fa`
 
-To reverse complement, from Pierre Lindenbaum Biostars : https://www.biostars.org/p/189325/ 
+Make reverse complement of barcode file (from Pierre Lindenbaum, Biostars : https://www.biostars.org/p/189325/)   
 `cat IonCode768.fa | while read L; do echo $L; read L; echo "$L" | rev | tr "ATGC" "TACG" ; done | sed -e "s/^M//" > IonCode768_revcomp.fa`      
 
-#### Demultiplex
-Demultiplex using the forward adapter, then the reverse-complement adapter set on unidentified.   
+#### b. Demultiplex
+Demultiplex using the forward adapter, then on the unidentified file from the forward adapter, demultiplex again using the reverse complement adapter file:     
 `./01_scripts/01b_demultiplex.sh`     
-Issue: this doesn't yet use parallel effectively, could implement w/ stacks_workflow cutadapt parallel approach, but this requires different input folders, so would have to break up into sections, or do each library separately (probably the best bet).    
+(#todo: this doesn't yet use parallel effectively, could implement w/ stacks_workflow cutadapt parallel approach, but this requires different input folders, so would have to break up into sections, or do each library separately (probably the best bet)).    
 
-
-Combine the files that were demultiplexed with forward adapter and with reverse-complemented adapter:     
+Per sample, combine the files demultiplexed by the forward adapter with those demultiplexed by the reverse adapter:     
 `01_scripts/collect_samples.sh`
 (note: currently expect warnings for combinations that weren't identified in the reverse complement adapter round, as there were much fewer reads remaining).     
+(#todo: could this be done with a single adapter file with both forward and reverse adapters? Probably!)
 
-#### Evaluate results
-Calculate the number of reads per sample, to produce `reads_per_sample2.txt`:
+#### c. Evaluate demultiplex results
+Calculate the number of reads per sample, to produce `reads_per_sample2.txt`:     
 `01_scripts/reads_per_sample.sh`
-(note: contains code from website: 'moving every second row to a new column with awk')
+(note: contains code from: 'moving every second row to a new column with awk')
 
-Note: still may need to remove the reverse complement adapter, perhaps with a full cutadapt run.   
+Then use the script `01_scripts/plot_demultiplex_result.R` that works on the read per sample table produced above. This will generate a horizontal barplot per sample `05_results/reads_per_sample.pdf`    
 
-### 4. Determine section of genome containing amplicons
-Need the range in a bed file
-Then run the following to get an amplicon file of just the expected amplicons to align against
+(#todo: still may need to remove the reverse complement adapter, perhaps with a full cutadapt run).   
+
+### 4. Limiting genome to amplicons only
+(#todo: not yet applied)
+Get the range in a bed file, then run the following to get an amplicon file of just the expected amplicons to align against
 `GENOME="ch_WG00004_7.20170208.fasta"; bedtools getfasta -fi $GENOME -bed ch_WG00004_9.20170224.designed.bed -fo ch_WG00004_7.20170208_extracted.fa`
 
-
 ### 5. Align against reference genome
-In this case, use the subset sections of the reference that were identified in Step 4. above.    
-
-Select one of the sample datafiles and align this against the reference genome.    
-
-
-### 6. Call SNPs
-The demultiplexed fastq files are in `04_samples`. Move any files that you don't want to analyze into the folder `04_samples/temp_storage`, and keep a few files you want to genotype in the main folder.    
+The demultiplexed fastq files are in `04_samples`.     
+Note: if want to only analyze a couple of files, move any unwanted into `04_samples/temp_storage`.   
 
 Index your reference genome using minimap2    
-`minimap2 -d Otsh_subset.mmi the_genome_assembly.fasta`    
+`minimap2 -d Otsh_subset.mmi path/to/the/genome_assembly.fasta`    
 
-Align the sample fastq files against the reference genome by editing the path to the genome and running the following:    
-`.01_scripts/02_align.sh`
+Set the genome variable and use minimap2 and samtools to align fastq samples in `04_samples` against the reference genome:    
+`01_scripts/02_align.sh`      
+Will produce stat files as well as indexed and sorted bam files.    
 
-This will do the alignment, as well as provide some stats including alignment and coverage statistics under the same name as the fastq file.    
+Run the following to generate alignments per chromosome in `05_results/sampleID_align_per_chr.txt`:    
+`01_scripts/count_aligns_per_chr.sh`      
 
+Then use the Rscript to generate figures:     
+`01_scripts/plot_alignment_coverage.R`     
+This will produce files `05_results/per_nucleotide_coverage.pdf` and `05_results/sampleID_align_per_chr.txt`, which requires the reads per sample table, the alignments per chromosome, as well as coverage statistics from the alignment.    
 
-
-## NEEDS CORRECTION
-#### 1. Data preprocessing
-As described by @jts, one needs to index the output of the albacore basecaller:   
-`nanopolish index -d ./02_raw_data/skip -s 03_basecalled/sequencing_summary.txt 03_basecalled/all_reads.fastq`   
-Where the -d flag directs towards the fast5 files, and the -s flag points towards the output of albacore sequence summary, and the final output of the albacore basecaller. 
+### 6. Call SNPs
+*this section still under development*
+Use nanopolish index on the sample.fastq file using the sequencing_summary.txt file from basecalling and the folder with fast5 files. (#todo: is seq summary txt file necessary?)   
+`nanopolish index -d /path/to/fast5/or/at/least/symlinks 04_samples/your_sample.fastq`    
 All reads should be accounted for if this worked correctly. 
 
-Observe the stats on the alignment:   
-`samtools stats 04_mapped/all_reads.sorted.bam > 04_mapped/all_reads.ali.stats.txt`
+Then run nanopolish variants to make a vcf with SNPs:    
+`nanopolish variants --progress -t 2 --reads 04_samples/your_sample.fastq --genome /path/to/genome.fa --ploidy 2 --bam 04_mapped/sample.bam -w chr:1-200 > 06_vcf/your_sample.vcf`    
 
-Collect information on coverage:   
-`grep "^COV" 04_mapped/all_reads.ali.stats.txt > 04_mapped/all_reads.coverage.tx`
-
-
-Remember, you can use 
-`samtools flagstat aln.sam`
-
-and to go from sam to bam:
-`samtools view -Sb aln.sam > aln.bam`
-
-Sort
-`samtools sort aln_new.bam -o aln_new.sorted.bam`
-
-
-Make sure to Nanopolish index your fasta file as well.  
-
-Use Nanopolish to compute the consensus sequence
-`python /home/ben/Programs/nanopolish/scripts/nanopolish_makerange.py`
-
-Computes the consensus sequence of the genome assembly based on the nanopore reads: 
-`python /home/ben/Programs/nanopolish/scripts/nanopolish_makerange.py ~/Documents/genomes/GCF_002021735.1_Okis_V1_genomic.fna | parallel --results nanopolish.results -P 8 nanopolish variants --consensus -o polished.{1}.vcf -w {1} -r 03_basecalled/all_reads.fa -b aln_new.sorted.bam -g ~/Documents/genomes/GCF_002021735.1_Okis_V1_genomic.fna -t 4 --min-candidate-frequency 0.1`
-
-
-
-Following the porecamp.github.io tutorial:    
-Variant calling with nanopolish:   
-Three steps:    
-1. align reads w/ aligner (done, this is `04_mapped/all_reads.sorted.bam`)
-2. align events w/ nanopolish eventalign
-3. call vcf with nanopolished variants
-
-
-Nanopolish needs a fasta file, so use Fastq to fasta:
-`fastq_to_fasta.py 03_basecalled/all_reads.fastq 03_basecalled/all_reads.fa`
-
-And this also needs to be indexed by nanopolish:    
-`nanopolish index -d ./02_raw_data/skip -s 03_basecalled/sequencing_summary.txt 03_basecalled/all_reads.fa`
-
-Then align events w/ nanopolish eventalign:   
-`nanopolish eventalign --reads 03_basecalled/all_reads.fa -b 04_mapped/all_reads.sorted.bam -g ~/Documents/genomes/GCF_002872995.1_Otsh_v1.0_genomic.fna --sam | samtools view -bS - | samtools sort -o 04_mapped/all_reads.eventalign.bam -`
-
-Index the new file that nanopolish eventalign produced:    
-`samtools index 04_mapped/all_reads.eventalign.bam`   
-
-Then run the following, adding the window of interest:   
-`nanopolish variants --progress -t 2 --reads 03_basecalled/all_reads.fa -o all_reads.eventalign.vcf -b 04_mapped/all_reads.sorted.bam -g ~/Documents/genomes/GCF_002872995.1_Otsh_v1.0_genomic.fna --snp --ploidy 4 -w NC_037115.1:39000000-3902000`
-
-However, this produces a vcf without anything in it. I need to be able to find a section of the bam with SNPs actually present. Would I do this per sample? 
+(#todo: make a script to automate the basecalling per region for all samples, then combine together)    
+(#todo: make a file to be used for the -w flag in the above)    
