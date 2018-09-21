@@ -95,5 +95,7 @@ All reads should be accounted for if this worked correctly.
 Then run nanopolish variants to make a vcf with SNPs:    
 `nanopolish variants --progress -t 2 --reads 04_samples/your_sample.fastq --genome /path/to/genome.fa --ploidy 2 --bam 04_mapped/sample.bam -w chr:1-200 > 06_vcf/your_sample.vcf`    
 
+Note: you will need to run nanopolish on each amplicon individually, so it will be run a total of the number of regions of interest. See details on applying xargs for this purpose here: https://github.com/jts/nanopolish/issues/224  
+
 (#todo: make a script to automate the basecalling per region for all samples, then combine together)    
 (#todo: make a file to be used for the -w flag in the above)    
