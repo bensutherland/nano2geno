@@ -12,7 +12,7 @@ samtools
 
 #### Inputs
 fast5     
-genome.fa    
+genome.fa or reference sequences of amplicons   
 inner barcodes (.csv or .fa)    
 
 ### 1. Basecalling
@@ -68,7 +68,7 @@ Then use the script `01_scripts/plot_demultiplex_result.R` that works on the rea
 Get the range in a bed file, then run the following to get an amplicon file of just the expected amplicons to align against
 `GENOME="ch_WG00004_7.20170208.fasta"; bedtools getfasta -fi $GENOME -bed ch_WG00004_9.20170224.designed.bed -fo ch_WG00004_7.20170208_extracted.fa`
 
-### 5. Align against reference genome
+### 5. Align against reference regions instead of genome
 The demultiplexed fastq files are in `04_samples`.     
 Note: if want to only analyze a couple of files, move any unwanted into `04_samples/temp_storage`.   
 
