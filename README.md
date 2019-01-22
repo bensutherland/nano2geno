@@ -6,9 +6,13 @@ Disclaimer: this is a simple pipeline that comes with no guarantees. At the mome
 
 #### Requirements
 Albacore basecaller     
-Nanopolish
+Porechop https://github.com/rrwick/Porechop      
+Nanopolish     
+marginAlign      
 minimap2    
 samtools    
+
+python3       
 
 #### Inputs
 fast5     
@@ -24,17 +28,24 @@ Run `read_fast5_basecaller.py` recursively, with demultiplexing of nanopore barc
 
 Output will be in `03_basecalled/workspace`, with reads inside folders `pass/fail/calibration_strands`, and reads in the `Pass` folder in different barcode subfolders containing fastq files for each barcode.    
 
-If you don't care what nanopore barcode was on your library, combine the fastq files into `03_basecalled/all_reads.fastq`     
+If you have an external library barcode, or don't care what barcode was on your library, combine the fastq files into `03_basecalled/all_reads.fastq`     
 `find ./03_basecalled/workspace/pass -name "*.fastq" | while read file ; do cat $file >> 03_basecalled/all_reads.fastq ; done`
 (make sure to remove any previous version of all_reads.fastq or else this will combine all to this)   
 (#todo: describe how to split this into sections to run in parallel)    
+
+(# new instructions #) 
+Combine all data from a single run 
+`cat 03_basecalled/*.fastq > 03_basecalled/all_reads.fastq`      
+
+How many reads are present?    
+`grep -cE '^\+$' 03_basecalled/all_reads.fastq`     
 
 ### 2. Data quality check
 Run fastqc on this data:    
 `fastqc 03_basecalled/all_reads.fastq -o 03_basecalled/fastqc -t 5`   
 `multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc`    
 
-### 3. Demultiplexing the inner library
+### 3A. Demultiplexing the inner library with cutadapt
 #### a. Create fasta from .csv, and also make a reverse-complement
 My data is kept in `IonCode768.csv`     
 
@@ -62,6 +73,18 @@ Calculate the number of reads per sample, to produce `reads_per_sample2.txt`:
 Then use the script `01_scripts/plot_demultiplex_result.R` that works on the read per sample table produced above. This will generate a horizontal barplot per sample `05_results/reads_per_sample.pdf`    
 
 (#todo: still may need to remove the reverse complement adapter, perhaps with a full cutadapt run).   
+
+### 3B. De-multiplex with Porechop
+#### a. De-multiplex using external adapters
+First we want to de-multiplex each concatenated read with Porechop, using the library ID barcodes.      
+Edit the adapter file to remove all of the adapters that you are not using as external library ID adapters. (e.g. the first 94 PCR adapters removed, leaving only 95 and 96).      
+This is needed because up to and including 94 are being used as fish ID internal adapters.    
+Demultiplex using external adapters (with default settings)      
+`~/Programs/Porechop/porechop-runner.py -i 03_basecalled/all_reads.fastq -b 03a_demultiplex_library -t 8 --adapter_threshold 90 --end_threshold 75`       
+The results will be in the folder specied by -b      
+
+
+
 
 ### 4. Limiting genome to amplicons only
 (#todo: not yet applied)
