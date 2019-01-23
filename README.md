@@ -13,6 +13,7 @@ minimap2
 samtools    
 
 python3       
+virtualenv     
 
 #### Inputs
 fast5     
@@ -75,23 +76,58 @@ Then use the script `01_scripts/plot_demultiplex_result.R` that works on the rea
 (#todo: still may need to remove the reverse complement adapter, perhaps with a full cutadapt run).   
 
 ### 3B. De-multiplex with Porechop
-#### a. De-multiplex using external adapters
+currently using Adapters 1, 2, 3 and renaming each step (#todo, make a script to automate renaming)
+
+#### i. De-multiplex using external barcodes
 First we want to de-multiplex each concatenated read with Porechop, using the library ID barcodes.      
-Edit the adapter file to remove all of the adapters that you are not using as external library ID adapters. (e.g. the first 94 PCR adapters removed, leaving only 95 and 96).      
-This is needed because up to and including 94 are being used as fish ID internal adapters.    
-Demultiplex using external adapters (with default settings)      
+To do this, edit the adapter file to remove all of the adapters that you are not using as external library ID adapters, otherwise the program looks for those and starts to cut the read at these locations. This step is done later in the pipeline. (Here remove the first 94 PCR barcodes, leaving only 95 and 96 as library barcodes).      
+
+If an internal barcode is seen at this step, the read is thrown out (#todo: fix this)     
+
+To prepare for de-multiplex step one, rename adapters-1 to adapters.py
+`mv ~/Programs/Porechop/porechop/adapters-1.py ~/Programs/Porechop/porechop/adapters.py`     
+
+Demultiplex using external adapters:      
 `~/Programs/Porechop/porechop-runner.py -i 03_basecalled/all_reads.fastq -b 03a_demultiplex_library -t 8 --adapter_threshold 90 --end_threshold 75`       
-The results will be in the folder specied by -b      
+The results will be in the folder specified by -b. (here `03a_demultiplex_library`)      
+This will produce a file per supplied external barcode, and a file containing reads without any adapter (none.fastq).       
+
+Then rename the used adapter file back to it's original name:    
+`mv ~/Programs/Porechop/porechop/adapters.py ~/Programs/Porechop/porechop/adapters-1.py`     
+
+(#todo add 'extra-trim-end 0' to avoid cutting out cat adapter)
+
+#### ii. De-concatenate using concatenation adapter within each library
+To prepare for de-multiplex step two (de-concatenation only with concatenation adapter), rename adapters-2 to adapters.py
+`mv ~/Programs/Porechop/porechop/adapters-2.py ~/Programs/Porechop/porechop/adapters.py`     
+
+(#todo: automate for all barcode files)
+
+`~/Programs/Porechop/porechop-runner.py -i 03a_demultiplex_library/BC96.fastq -o 03a_demultiplex_library/BC96_deconcat.fastq -t 16 --middle_threshold 75 --min_split_read_size 100 --extra_middle_trim_bad_side 0 --extra_middle_trim_good_side 0`     
+
+Then rename the used adapter file back to it's original name:    
+`mv ~/Programs/Porechop/porechop/adapters.py ~/Programs/Porechop/porechop/adapters-2.py`     
+
+#### iii. De-multiplex the de-concatenated library
+To prepare for de-multiplex step three (de-multiplex with sample ID barcodes), rename adapters-3 to adapters.py
+`mv ~/Programs/Porechop/porechop/adapters-3.py ~/Programs/Porechop/porechop/adapters.py`     
+
+Now run porechop to de-multiplex samples based on all 96 barcodes, search extra reads to identify all the barcodes.      
+`~/Programs/Porechop/porechop-runner.py -i 03a_demultiplex_library/BC96_deconcat.fastq -b 03b_demultiplexed/ -t 16 --adapter_threshold 90 --end_threshold 75 --check_reads 100000`      
 
 
+Then rename the used barcode file back to it's original name:     
+`mv ~/Programs/Porechop/porechop/adapters.py ~/Programs/Porechop/porechop/adapters-3.py`     
 
 
 ### 4. Limiting genome to amplicons only
+(#this is not applied in the current job)
 (#todo: not yet applied)
 Get the range in a bed file, then run the following to get an amplicon file of just the expected amplicons to align against
 `GENOME="ch_WG00004_7.20170208.fasta"; bedtools getfasta -fi $GENOME -bed ch_WG00004_9.20170224.designed.bed -fo ch_WG00004_7.20170208_extracted.fa`
 
-### 5. Align against reference regions instead of genome
+
+### 5A. Align against reference regions instead of genome with minimap2 (Nanopolish input)
 The demultiplexed fastq files are in `04_samples`.     
 Note: if want to only analyze a couple of files, move any unwanted into `04_samples/temp_storage`.   
 
@@ -108,6 +144,18 @@ Run the following to generate alignments per chromosome in `05_results/sampleID_
 Then use the Rscript to generate figures:     
 `01_scripts/plot_alignment_coverage.R`     
 This will produce files `05_results/per_nucleotide_coverage.pdf` and `05_results/sampleID_align_per_chr.txt`, which requires the reads per sample table, the alignments per chromosome, as well as coverage statistics from the alignment.    
+
+
+### 5B. Align against reference regions with marginAlign (marginCaller input)
+marginAlign requires some specific python packages. To best deal with this, we will use a virtual environment.     
+Move to the marginAlign installation and launch a virtual environment.    
+`cd ~/Programs/marginAlign/`      
+`virtualenv --no-site-packages --distribute env && source env/bin/activate && pip install -r requirements.txt`
+
+Align to the reference genome specified within the following script:     
+`./01_script/02_align_marginAlign.sh`      
+
+
 
 ### 6. Call SNPs
 *this section still under development*
