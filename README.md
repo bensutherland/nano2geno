@@ -156,7 +156,6 @@ Align to the reference genome specified within the following script:
 `./01_script/02_align_marginAlign.sh`      
 
 
-
 ### 6. Call SNPs
 *this section still under development*
 Use nanopolish index on the sample.fastq file using the sequencing_summary.txt file from basecalling and the folder with fast5 files. (#todo: is seq summary txt file necessary?)   
