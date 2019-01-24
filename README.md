@@ -119,6 +119,9 @@ Now run porechop to de-multiplex samples based on all 96 barcodes, search extra 
 Then rename the used barcode file back to it's original name:     
 `mv ~/Programs/Porechop/porechop/adapters.py ~/Programs/Porechop/porechop/adapters-3.py`     
 
+Move the demultiplexed samples into the appropriate folder.    
+`cp -l 03b_demultiplexed/*.fastq 04_samples`      
+
 
 ### 4. Limiting genome to amplicons only
 (#this is not applied in the current job)
@@ -151,12 +154,13 @@ marginAlign requires some specific python packages. To best deal with this, we w
 Move to the marginAlign installation and launch a virtual environment.    
 `cd ~/Programs/marginAlign/`      
 `virtualenv --no-site-packages --distribute env && source env/bin/activate && pip install -r requirements.txt`
+`cd -`     
 
 Align to the reference genome specified within the following script:     
 `./01_script/02_align_marginAlign.sh`      
 
 
-### 6. Call SNPs
+### 6A. Call SNPs with Nanopolish
 *this section still under development*
 Use nanopolish index on the sample.fastq file using the sequencing_summary.txt file from basecalling and the folder with fast5 files. (#todo: is seq summary txt file necessary?)   
 `nanopolish index -d /path/to/fast5/or/at/least/symlinks 04_samples/your_sample.fastq`    
@@ -169,3 +173,11 @@ Note: you will need to run nanopolish on each amplicon individually, so it will 
 
 (#todo: make a script to automate the basecalling per region for all samples, then combine together)    
 (#todo: make a file to be used for the -w flag in the above)    
+
+### 6B. Call SNPs with marginCaller
+Run marginCaller, still in the virtual environment, with the following script. Output will be vcf in 06_vcf:      
+`01_scripts/03_call_SNP_marginCaller.sh`      
+
+
+
+

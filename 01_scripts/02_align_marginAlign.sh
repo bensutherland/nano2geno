@@ -24,3 +24,6 @@ do
     grep "^COV" $MAPPED_FOLDER/"${name%.fastq}"_ali_stats.txt > $MAPPED_FOLDER/"${name%.fastq}"_cov_stats.txt
 
 done
+
+#todo remove jobtree files
+
