@@ -71,7 +71,7 @@ Calculate the number of reads per sample, to produce `reads_per_sample2.txt`:
 `01_scripts/reads_per_sample.sh`
 (note: contains code from: 'moving every second row to a new column with awk')
 
-Then use the script `01_scripts/plot_demultiplex_result.R` that works on the read per sample table produced above. This will generate a horizontal barplot per sample `05_results/reads_per_sample.pdf`    
+Then use the script `01_scripts/plot_demultiplex_result.R` that works on the read per sample table produced above. This will generate a horizontal barplot per sample 05_results/reads_per_sample.pdf    
 
 (#todo: still may need to remove the reverse complement adapter, perhaps with a full cutadapt run).   
 
@@ -161,7 +161,7 @@ Align to the reference genome specified within the following script:
 
 
 ### 6A. Call SNPs with Nanopolish
-*this section still under development*
+*this section still under development*          
 Use nanopolish index on the sample.fastq file using the sequencing_summary.txt file from basecalling and the folder with fast5 files. (#todo: is seq summary txt file necessary?)   
 `nanopolish index -d /path/to/fast5/or/at/least/symlinks 04_samples/your_sample.fastq`    
 All reads should be accounted for if this worked correctly. 
