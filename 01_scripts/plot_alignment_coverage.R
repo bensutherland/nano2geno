@@ -5,8 +5,10 @@
 # rm(list=ls())
 par(mfrow=c(1,3))
 setwd("~/Documents/01_nanopore/nano2geno")
-library(ggplot2)
 
+# Install Packages
+# install.packages("ggplot2")
+library(ggplot2)
 
 #### Input reads per sample table ####
 reads.per.sample <- read.delim2(file = "reads_per_sample2.txt", sep = " ", header = F
