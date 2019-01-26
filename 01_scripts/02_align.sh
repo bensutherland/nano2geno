@@ -6,10 +6,10 @@ SAMPLE_FOLDER="04_samples"
 MAPPED_FOLDER="04_mapped"
 
 # User-defined variables
-THREADS="4"
+THREADS="8"
 #GENOME="/home/ben/Documents/genomes/GCF_002872995.1_Otsh_v1.0_genomic.fna"
-GENOME="/home/ben/Documents/01_nanopore/nano2geno/02b_genome/GCF_002021735.1_Okis_V1_genomic.fna"
-# GENOME="00_archive/ch_WG00004_7.20170208_extracted.fa"
+#GENOME="/home/ben/Documents/01_nanopore/nano2geno/02b_genome/GCF_002021735.1_Okis_V1_genomic.fna"
+GENOME="02b_genome/Ots_amplicons_rubias_no-N.fa"
 
 # Align with minimap2 (requires that ref is indexed) 
 for file in $(ls -1 $SAMPLE_FOLDER/*.fastq )
