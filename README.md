@@ -129,7 +129,7 @@ Get the range in a bed file, then run the following to get an amplicon file of j
 `GENOME="ch_WG00004_7.20170208.fasta"; bedtools getfasta -fi $GENOME -bed ch_WG00004_9.20170224.designed.bed -fo ch_WG00004_7.20170208_extracted.fa`
 
 
-### 5A. Align against reference regions with minimap2
+### 5. Align against reference regions
 The demultiplexed fastq files are in `04_samples`.     
 
 Index your reference genome using minimap2    
@@ -146,26 +146,7 @@ Then use the Rscript to generate figures:
 `01_scripts/plot_alignment_coverage.R`     
 This will produce files `05_results/per_nucleotide_coverage.pdf` and `05_results/sampleID_align_per_chr.txt`, which requires the reads per sample table, the alignments per chromosome, as well as coverage statistics from the alignment.    
 
-
-### 6A. Call SNPs with minimap2 alignments using Nanopolish
-*this section still under development*          
-Use nanopolish index on the sample.fastq file using the sequencing_summary.txt file from basecalling and the folder with fast5 files. (#todo: is seq summary txt file necessary?)   
-`nanopolish index -d /path/to/fast5/or/at/least/symlinks 04_samples/your_sample.fastq`    
-All reads should be accounted for if this worked correctly. 
-
-Then run nanopolish variants to make a vcf with SNPs:    
-`nanopolish variants --progress -t 2 --reads 04_samples/your_sample.fastq --genome /path/to/genome.fa --ploidy 2 --bam 04_mapped/sample.bam -w chr:1-200 > 06_vcf/your_sample.vcf`    
-
-Note: you will need to run nanopolish on each amplicon individually, so it will be run a total of the number of regions of interest. See details on applying xargs for this purpose here: https://github.com/jts/nanopolish/issues/224  
-
-(#todo: make a script to automate the basecalling per region for all samples, then combine together)    
-(#todo: make a file to be used for the -w flag in the above)    
-
-
-### 6B. Call SNPs with minimap2 alignments using pysamstats 
+### 6. Call SNPs with minimap2 alignments using pysamstats 
 Run pysamstats to output the nucleotides found at every position in all aligned sample files.    
 `01_scripts/03_call_SNP_pysamstats.sh`       
-
-
-
 
