@@ -8,10 +8,8 @@ OUTPUT_FOLDER="06_vcf"
 # User-defined variables
 THREADS="8"
 GENOME="02b_genome/Ots_amplicons_rubias_no-N.fa"
-LOCUS="00_archive/Ots_amplicon_names_rubias-SNP_location.txt"
 
-
-# Align with minimap2 (requires that ref is indexed) 
+# Calling all nucleotide position variants using pysamstats 
 for file in $(ls -1 $INPUT_FOLDER/*.bam )
 do
     # Reporting 
@@ -20,8 +18,5 @@ do
 
     # pysamstats to identify all loci
     pysamstats -t variation -f $GENOME $INPUT_FOLDER/$name > $OUTPUT_FOLDER/"${name%.bam}"_var.txt
-
-    # Keep only selected loci
-    grep -f $LOCUS $OUTPUT_FOLDER/"${name%.bam}"_var.txt > $OUTPUT_FOLDER/"${name%.bam}"_sel_var.txt
 
 done

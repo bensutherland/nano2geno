@@ -7,13 +7,8 @@ Disclaimer: this is a simple pipeline that comes with no guarantees. At the mome
 #### Requirements
 Albacore basecaller     
 Porechop https://github.com/rrwick/Porechop      
-Nanopolish     
-marginAlign      
 minimap2    
 samtools    
-
-python3       
-virtualenv     
 
 #### Inputs
 fast5     
@@ -146,7 +141,29 @@ Then use the Rscript to generate figures:
 `01_scripts/plot_alignment_coverage.R`     
 This will produce files `05_results/per_nucleotide_coverage.pdf` and `05_results/sampleID_align_per_chr.txt`, which requires the reads per sample table, the alignments per chromosome, as well as coverage statistics from the alignment.    
 
-### 6. Call SNPs with minimap2 alignments using pysamstats 
-Run pysamstats to output the nucleotides found at every position in all aligned sample files.    
+### 6. Call variants 
+
+#### 6.a. Identify nucleotides at all loci
+This will use the genome and all bam files in `04_mapped`.     
+Set the genome variable to run pysamstats and output the nucleotides found at every position in all aligned sample files.    
 `01_scripts/03_call_SNP_pysamstats.sh`       
 
+#### 6.b. Prepare chromosome selection file 
+This step will use a chromosome position file that specifies the chromosome and the position needed for the analysis.   
+The chromosome position file will have the following format:     
+`chrom \t pos \t ref \t var`       
+
+Run the following script to prepare this chromosome position file into the formats needed for the analysis:     
+`./01_scripts/prepare_locus_selection_file.sh`    
+
+This will produce a file called `00_archive/locus_selection_w_index.txt` that will be used later. 
+
+#### 6.c. Select loci of interest
+Use the following script to add an index column to the data file and then select out the specific lines of interest from the data files.     
+`./01_scripts/04_select_variants.sh`    
+
+This will output files entitled `name_var_w_index_selected.txt` to be used downstream.    
+
+### 7. Collect specific SNPs 
+Use the Rscript interactively:    
+`04_collect_select_genos.R`      
