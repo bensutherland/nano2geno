@@ -5,11 +5,11 @@
 # rm(list=ls())
 
 # Set working directory
-setwd("~/Documents/01_nanopore/nano2geno_stark")
+setwd("~/Nano_GSI/nano2geno/07_GSI")
 
 #### 01. Input Data ####
 # guide file
-selecting.dat <- read.delim2(file = "00_archive/Ots_amplicon_names_rubias_SNP_location_ref_var_match.txt"
+selecting.dat <- read.delim2(file = "~/Nano_GSI/nano2geno/00_archive/Ots_amplicon_names_rubias_SNP_location_ref_var_match.txt"
                              , header = T)
 
 colnames(selecting.dat)
@@ -17,15 +17,15 @@ head(selecting.dat)
 dim(selecting.dat) #296 records
 
 # empirical data file
-vcf.dat <- read.delim2(file = "06_vcf/none_sel_var_match.txt"
+vcf.dat <- read.delim2(file = "BC73_sel_var.txt"
                              , header = T)
 colnames(vcf.dat)
-vcf.dat <- vcf.dat[, c("chrom_pos", "chrom", "pos", "ref", "reads_all", "A", "C", "T", "G")]
+vcf.dat <- vcf.dat[, c("chrom", "pos", "ref", "reads_all", "A", "C", "T", "G")]
 colnames(vcf.dat)
 dim(vcf.dat) #311 records
 
 # Join the two files
-data <- merge(x = vcf.dat, y = selecting.dat, by = "chrom_pos")
+data <- merge(x = vcf.dat, y = selecting.dat, by = "chrom", all.y = TRUE)
 dim(data) # 291 records
 
 colnames(data)
@@ -40,7 +40,7 @@ for(i in 1:nrow(data)){
   print(i)
   
   # select the two max alleles
-  genos <- data[i, c(6:9)]
+  genos <- data[i, c(5:8)]
   print(genos)
   genos <- t(genos)
   print(genos)
@@ -160,7 +160,7 @@ head(all.data.df, n = 10)
 
 #### 05. Filter based on low read count ####
 # Set minimum total read filter
-threshold <- 20
+threshold <- 2
 
 for(i in 1:nrow(all.data.df)){
   if(all.data.df$r.maj[i] + all.data.df$r.min[i] > threshold){
@@ -217,19 +217,37 @@ head(all.data.w.guide.df)
 hotspot.call <- NULL
 
 for(i in 1:nrow(all.data.w.guide.df)){
-  if(all.data.w.guide.df$genos1[i]!=all.data.w.guide.df$genos2[i]){
+  if(all.data.w.guide.df$keep[i] == FALSE ){
+    hotspot.call[i] <- NA
+     
+  } else if(all.data.w.guide.df$genos1[i]!=all.data.w.guide.df$genos2[i]){
     hotspot.call[i] <- "het"
+    
+  } else if( (all.data.w.guide.df$genos1[i]==all.data.w.guide.df$genos2[i]) # is a homozygote 
+             && all.data.w.guide.df$genos1[i]==all.data.w.guide.df$ref[i]){ # is a homo.ref
+    hotspot.call[i] <- "homo.ref"
+    
+  } else if( (all.data.w.guide.df$genos1[i]==all.data.w.guide.df$genos2[i]) # is a homozygote 
+             && all.data.w.guide.df$genos1[i]==all.data.w.guide.df$var[i]){ # is a homo.var
+    hotspot.call[i] <- "homo.var"
+  }
+}
+
+#ben old
+#for(i in 1:nrow(all.data.w.guide.df)){
+ # if(all.data.w.guide.df$genos1[i]!=all.data.w.guide.df$genos2[i]){
+ #   hotspot.call[i] <- "het"
     #todo: confirm this het is the same as the expected het, otherwise throw NA
     
-    } else if( (all.data.w.guide.df$genos1[i]==all.data.w.guide.df$genos2[i]) # is a homozygote 
-                 && all.data.w.guide.df$genos1[i]==all.data.w.guide.df$ref[i]){ # is a homo.ref)
-      hotspot.call[i] <- "homo.ref"
+#    } else if( (all.data.w.guide.df$genos1[i]==all.data.w.guide.df$genos2[i]) # is a homozygote 
+#                 && all.data.w.guide.df$genos1[i]==all.data.w.guide.df$ref[i]){ # is a homo.ref)
+#      hotspot.call[i] <- "homo.ref"
   
-    } else if( (all.data.w.guide.df$genos1[i]==all.data.w.guide.df$genos2[i]) # is a homozygote 
-              && all.data.w.guide.df$genos1[i]==all.data.w.guide.df$var[i]){ # is a homo.var)) {
-      hotspot.call[i] <- "homo.var"
-      }
-    }
+ #   } else if( (all.data.w.guide.df$genos1[i]==all.data.w.guide.df$genos2[i]) # is a homozygote 
+ #             && all.data.w.guide.df$genos1[i]==all.data.w.guide.df$var[i]){ # is a homo.var)) {
+ #     hotspot.call[i] <- "homo.var"
+ #     }
+ #   }
 
 hotspot.call
 
@@ -244,9 +262,12 @@ rubias1 <- NULL; rubias2 <- NULL
 
 # Loop
 for(i in 1:nrow(all.data.w.guide.w.hotspot.call.df)){
-  if(all.data.w.guide.w.hotspot.call.df$hotspot.call[i]=="homo.ref"){
+  if(all.data.w.guide.w.hotspot.call.df$keep[i] == FALSE){
+    rubias1[i] <- NA
+    rubias2[i] <- NA
+  } else if(all.data.w.guide.w.hotspot.call.df$hotspot.call[i]=="homo.ref"){
     rubias1[i] <- 1
-    rubias2[i] <- 1
+    rubias2[i] <- 1  
   } else if(all.data.w.guide.w.hotspot.call.df$hotspot.call[i]=="het"){
     rubias1[i] <- 1
     rubias2[i] <- 2
@@ -256,6 +277,19 @@ for(i in 1:nrow(all.data.w.guide.w.hotspot.call.df)){
   }
 }
 
+#ben's od version below
+#for(i in 1:nrow(all.data.w.guide.w.hotspot.call.df)){
+#  if(all.data.w.guide.w.hotspot.call.df$hotspot.call[i]=="homo.ref"){
+ #   rubias1[i] <- 1
+ #   rubias2[i] <- 1
+ # } else if(all.data.w.guide.w.hotspot.call.df$hotspot.call[i]=="het"){
+ #   rubias1[i] <- 1
+ #   rubias2[i] <- 2
+ # } else if(all.data.w.guide.w.hotspot.call.df$hotspot.call[i]=="homo.var"){
+ #   rubias1[i] <- 2
+  #  rubias2[i] <- 2
+ # }
+#}
 complete.df <- cbind(all.data.w.guide.w.hotspot.call.df, rubias1, rubias2)
 
 head(complete.df)
@@ -302,9 +336,16 @@ final.out.df <- rbind(names(output.df.t), output.df.t)
 dim(final.out.df)
 final.out.df[1:2,1:5]
 
+### Missing: sample_type, collection, repunit, indiv
+final_header <- c('sample_type', 'collection', 'repunit', 'indiv')
+BC73_info <- c('mixed','lab',NA, 'BC73')
+final_leader <- data.frame(final_header, BC73_info, stringsAsFactors=FALSE)
+t_final_leader <- t(final_leader)
+final_rubias_out.df <- cbind(t_final_leader, final.out.df)
+
 
 ### Data available in output.df.t
-write.table(x = final.out.df, file = "rubias_input.csv", sep=",", row.names = F, col.names = F)
+write.table(x = final_rubias_out.df, file = "rubias_inputBC73.csv", sep=",", row.names = F, col.names = F)
 
 
 
