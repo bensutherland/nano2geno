@@ -123,16 +123,14 @@ Move the demultiplexed samples into the appropriate folder.
 `cp -l 03b_demultiplexed/*.fastq 04_samples`      
 
 
-### 4. Limiting genome to amplicons only
-(#this is not applied in the current job)
-(#todo: not yet applied)
+### 4. Limiting genome to amplicons only (optional)
+This is only necessary if you do not have a hotspot file already. It will pull the regions needed from a reference genome.    
 Get the range in a bed file, then run the following to get an amplicon file of just the expected amplicons to align against
 `GENOME="ch_WG00004_7.20170208.fasta"; bedtools getfasta -fi $GENOME -bed ch_WG00004_9.20170224.designed.bed -fo ch_WG00004_7.20170208_extracted.fa`
 
 
-### 5A. Align against reference regions instead of genome with minimap2 (Nanopolish input)
+### 5A. Align against reference regions with minimap2
 The demultiplexed fastq files are in `04_samples`.     
-Note: if want to only analyze a couple of files, move any unwanted into `04_samples/temp_storage`.   
 
 Index your reference genome using minimap2    
 `minimap2 -d Otsh_subset.mmi path/to/the/genome_assembly.fasta`    
@@ -147,17 +145,6 @@ Run the following to generate alignments per chromosome in `05_results/sampleID_
 Then use the Rscript to generate figures:     
 `01_scripts/plot_alignment_coverage.R`     
 This will produce files `05_results/per_nucleotide_coverage.pdf` and `05_results/sampleID_align_per_chr.txt`, which requires the reads per sample table, the alignments per chromosome, as well as coverage statistics from the alignment.    
-
-
-### 5B. Align against reference regions with marginAlign (marginCaller input)
-marginAlign requires some specific python packages. To best deal with this, we will use a virtual environment.     
-Move to the marginAlign installation and launch a virtual environment.    
-`cd ~/Programs/marginAlign/`      
-`virtualenv --no-site-packages --distribute env && source env/bin/activate && pip install -r requirements.txt`
-`cd -`     
-
-Align to the reference genome specified within the following script:     
-`./01_script/02_align_marginAlign.sh`      
 
 
 ### 6A. Call SNPs with minimap2 alignments using Nanopolish
@@ -178,12 +165,6 @@ Note: you will need to run nanopolish on each amplicon individually, so it will 
 ### 6B. Call SNPs with minimap2 alignments using pysamstats 
 Run pysamstats to output the nucleotides found at every position in all aligned sample files.    
 `01_scripts/03_call_SNP_pysamstats.sh`       
-
-
-
-### 6C. Call SNPs with marginCaller
-Run marginCaller, still in the virtual environment, with the following script. Output will be vcf in 06_vcf:      
-`01_scripts/03_call_SNP_marginCaller.sh`      
 
 
 
