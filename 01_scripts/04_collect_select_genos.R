@@ -1,3 +1,6 @@
+#!/usr/bin/env Rscript
+args <- commandArgs(trailingOnly = TRUE) # enables use of arguments from command line
+
 # Call SNPS
 # Simply call SNPs based on allelic ratio
 
@@ -10,9 +13,10 @@ setwd("~/Documents/01_nanopore/nano2geno")
 # Set user variables
 threshold <- 10 # the total number of reads required to call a genotype
 
-sample <- "none"
-# sample <- ## THIS IS WHERE YOU PUT THE ARG
-
+#### Run interactive or automated ####
+sample <- "none" # interactive mode
+sample <- "BC10" # debugging, interactive mode
+# sample <- args[1] # automated mode
 
 #### 01. Input Data ####
 # Guide file
