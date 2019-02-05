@@ -12,6 +12,9 @@ setwd("~/Documents/01_nanopore/nano2geno")
 
 # Set user variables
 threshold <- 10 # the total number of reads required to call a genotype
+sample.type <- "mixed"
+collection.type <- "lab"
+repunit <- "NA"
 
 #### Run interactive or automated ####
 # sample <- "none" # interactive mode
@@ -167,7 +170,7 @@ snp.call <- NULL;
 for(i in 1:nrow(all.data.df)){
   
   # Add option for if NA
-  if(is.na(all.data.df$al.ratio[i])==T){
+  if(is.na(all.data.df$al.ratio[i])==TRUE){
     snp.call <- NA
   } else if(all.data.df$al.ratio[i] > 0.75){
     snp.call <- "homo.min"
@@ -384,13 +387,11 @@ final.out.df[1:2,1:5]
 # test[order(test$chr)
 # final.out.df
 
-
-
 #### 11. Add metadata to rubias output ####
 ## Add header info: sample_type, collection, repunit, indiv
 final.header <- NULL; sample.info <- NULL
 final.header <- c("sample_type", "collection", "repunit", "indiv")
-sample.info <- c("mixed", "lab", NA, sample) ## Change sample.x to be the rep of the loop
+sample.info <- c(sample.type, collection.type, repunit, sample)
 
 final.leader <- data.frame(final.header, sample.info, stringsAsFactors=FALSE)
 t.final.leader <- t(final.leader)
@@ -404,9 +405,9 @@ rubias.out.df[1:2,1:10]
 colnames(rubias.out.df) <- rubias.out.df[1,]
 rubias.out.df[1:2,1:10]
 
-out.filename <- paste0("07_rubias/", sample, "_rubias_out.txt")
+out.filename <- paste0("07_rubias/", sample, "_rubias_input.txt")
 write.table(x = rubias.out.df, file = out.filename, sep = ","
-            , col.names = F)
+            , col.names = F, row.names = F)
 
 
 ### BOTTOM OF LOOP SECTION

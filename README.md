@@ -164,7 +164,7 @@ Use the following script to add an index column to the data file and then select
 
 This will output files entitled `<sample>_var_w_index_selected.txt` to be used downstream.    
 
-### 7. Collect specific SNPs 
+#### 7. Collect specific SNPs 
 Use the Rscript interactively:    
 `04_collect_select_genos.R`     
 
@@ -172,9 +172,9 @@ If you want to automatically run all samples, use the shell script, which will o
 `./01_scripts/05_run_collect_select_genos.sh`    
 Note that this will also require that you have the guide file in `00_archive/locus_selection_w_index.txt`       
 
-The results will end up in `07_rubias` in wide format, one file for each sample, with titles `<sample>_rubias_out.txt`      
+The results will end up in `07_rubias` in wide format, one file for each sample, with titles `<sample>_rubias_input.txt`      
 
+Then run the following script to collect all input data and put into a single dataframe      
+`01_scripts/06_merge_all_rubias_input_files.R`
 
-
-
- 
+#### 8. Rubias

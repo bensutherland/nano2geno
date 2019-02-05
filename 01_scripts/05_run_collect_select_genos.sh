@@ -6,7 +6,8 @@ INPUT_FOLDER="06_vcf"
 
 # If running individual samples, for debugging
 #sample="none" # testing mode
-#sample="BC10" # testing mode
+#Rscript --vanilla 01_scripts/04_collect_select_genos.R $sampl
+
 
 for file in $(ls -1 $INPUT_FOLDER/*"_var_w_index_selected.txt")
 do
