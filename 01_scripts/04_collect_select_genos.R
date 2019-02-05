@@ -14,9 +14,9 @@ setwd("~/Documents/01_nanopore/nano2geno")
 threshold <- 10 # the total number of reads required to call a genotype
 
 #### Run interactive or automated ####
-sample <- "none" # interactive mode
-sample <- "BC10" # debugging, interactive mode
-# sample <- args[1] # automated mode
+# sample <- "none" # interactive mode
+# sample <- "BC10" # debugging, interactive mode
+sample <- args[1] # automated mode
 
 #### 01. Input Data ####
 # Guide file
@@ -41,7 +41,7 @@ dim(selecting.dat) #296 records
 #   sample <- gsub(data.files[d], pattern = "\\_.*", replacement = "")
 #   print(sample)
 
-### END LOOP SECTION
+### END LOOP SECTION #####
 
 
 ### Import sample file
@@ -165,8 +165,11 @@ head(all.data.df)
 snp.call <- NULL; 
 
 for(i in 1:nrow(all.data.df)){
-  # 
-  if(all.data.df$al.ratio[i] > 0.75){
+  
+  # Add option for if NA
+  if(is.na(all.data.df$al.ratio[i])==T){
+    snp.call <- NA
+  } else if(all.data.df$al.ratio[i] > 0.75){
     snp.call <- "homo.min"
   } else if(all.data.df$al.ratio[i] < 0.25){
     snp.call <- "homo.maj"
@@ -216,13 +219,16 @@ table(all.data.df$keep)
 genos1 <- NULL; genos2 <- NULL
 
 for(i in 1:nrow(all.data.df)){
-  if(all.data.df$snp.call[i]=="homo.maj"){
+  # Add option for missing data
+  if(is.na(all.data.df$snp.call[i])==TRUE){
+    genos1[i] <- NA # give NAs to genos
+    genos2[i] <- NA
     
+  } else if(all.data.df$snp.call[i]=="homo.maj"){
     genos1[i] <- all.data.df$maj[i] # put major allele as genos1
     genos2[i] <- all.data.df$maj[i] # put major allele as genos2
     
   } else if(all.data.df$snp.call[i]=="het"){
-    
     genos1[i] <- all.data.df$maj[i] # put major allele as genos1
     genos2[i] <- all.data.df$min[i] # put minor allele as genos2
   }

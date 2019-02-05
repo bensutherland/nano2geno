@@ -162,8 +162,19 @@ This will produce a file called `00_archive/locus_selection_w_index.txt` that wi
 Use the following script to add an index column to the data file and then select out the specific lines of interest from the data files.     
 `./01_scripts/04_select_variants.sh`    
 
-This will output files entitled `name_var_w_index_selected.txt` to be used downstream.    
+This will output files entitled `<sample>_var_w_index_selected.txt` to be used downstream.    
 
 ### 7. Collect specific SNPs 
 Use the Rscript interactively:    
-`04_collect_select_genos.R`      
+`04_collect_select_genos.R`     
+
+If you want to automatically run all samples, use the shell script, which will operate on all the file in `06_vcf/*"_var_w_index_selected.txt"`:      
+`./01_scripts/05_run_collect_select_genos.sh`    
+Note that this will also require that you have the guide file in `00_archive/locus_selection_w_index.txt`       
+
+The results will end up in `07_rubias` in wide format, one file for each sample, with titles `<sample>_rubias_out.txt`      
+
+
+
+
+ 
