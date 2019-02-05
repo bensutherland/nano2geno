@@ -20,7 +20,24 @@ dim(selecting.dat) #296 records
 
 # empirical data file
 ### TODO ### AUTOMATE MULTIPLE FILES
-vcf.dat <- read.delim2(file = "06_vcf/none_var_w_index_selected.txt"
+rubias.all.df <- NULL; rubias.all <- NULL
+
+
+#### START LOOP #####
+data.files <- list.files(path = "06_vcf", pattern = "var_w_index_selected.txt")
+data.files
+
+sample <- NULL
+for(d in 1:length(data.files)){
+  sample <- gsub(data.files[d], pattern = "\\_.*", replacement = "")
+  print(sample)
+
+input.filename <- paste0("06_vcf/", sample, "_var_w_index_selected.txt")
+print(input.filename)
+
+### 
+  
+vcf.dat <- read.delim2(file = input.filename
                              , header = T)
 colnames(vcf.dat)
 vcf.dat <- vcf.dat[, c("chrom_pos", "chrom", "pos", "ref", "reads_all", "A", "C", "T", "G")]
@@ -344,26 +361,61 @@ final.out.df <- rbind(names(output.df.t), output.df.t)
 dim(final.out.df)
 final.out.df[1:2,1:5]
 
+
+# # Put into alphabetic order
+# test <- t(final.out.df)
+# colnames(test) <- c("chr", "geno")
+# test[order(test$chr)
+# final.out.df
+
+
+
 #### 11. Add metadata to rubias output ####
 ## Add header info: sample_type, collection, repunit, indiv
 final.header <- NULL; sample.info <- NULL
 final.header <- c("sample_type", "collection", "repunit", "indiv")
-sample.info <- c("mixed", "lab", NA, "sample.x") ## Change sample.x to be the rep of the loop
+sample.info <- c("mixed", "lab", NA, sample) ## Change sample.x to be the rep of the loop
 
-final_leader <- data.frame(final_header, sample.info, stringsAsFactors=FALSE)
-t_final_leader <- t(final_leader)
+final.leader <- data.frame(final.header, sample.info, stringsAsFactors=FALSE)
+t.final.leader <- t(final.leader)
 
 # Add metadata section to the front of the output dataframe
 rubias.out.df <- cbind(t_final_leader, final.out.df)
 
 rubias.out.df[1:2,1:10]
 
+# move the first row into the header
+colnames(rubias.out.df) <- rubias.out.df[1,]
+rubias.out.df[1:2,1:10]
+
+out.filename <- paste0("07_rubias/", sample, "_rubias_out.txt")
+write.table(x = rubias.out.df, file = out.filename, sep = ","
+            , col.names = F)
+
+
+}
+
+### TODO ### Next need to bring back all of these rubias files and join them together
+# test <- read.delim2(file = out.filename, header = T, sep = ",", stringsAsFactors = F)
+# str(test)
+
+### FRAGMENTS ###
+# only keep the sample row and the header
+# rubias.out.df <- rubias.out.df["sample.info",]
+# str(as.data.frame(rubias.out.df))
+# names(rubias.out.df[1:10])
+# rubias.combine.fraction.1 <- t(rubias.out.df)
+# head(rubias.combine.fraction.1)
+# merge(x = rubias.combine.fraction.1, rubias.all.df)
+
+
+##### LOOP OPTION
 ##### THEN BIND THIS ON TO THE PRECEDING RUN #####
 
-
-### Data available in output.df.t
-write.table(x = final_rubias_out.df, file = "rubias_inputBC73.csv", sep=",", row.names = F, col.names = F)
-
-# Export results
-write.csv(x = all.data.df, file = "06_vcf/genotypes.csv", row.names = F)
-write.csv(x = all.data.w.guide.df, file = "temp.csv")
+# write.csv2(x = rubias.out.df, file = "")
+# 
+# write.table(x = rubias.out.df, file = "rubias_inputBC73.csv", sep=",", row.names = F, col.names = F)
+# 
+# # Export results
+# write.csv(x = all.data.df, file = "06_vcf/genotypes.csv", row.names = F)
+# write.csv(x = all.data.w.guide.df, file = "temp.csv")
