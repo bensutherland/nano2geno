@@ -10,42 +10,48 @@ setwd("~/Documents/01_nanopore/nano2geno")
 # Set user variables
 threshold <- 10 # the total number of reads required to call a genotype
 
+sample <- "none"
+# sample <- ## THIS IS WHERE YOU PUT THE ARG
+
+
 #### 01. Input Data ####
-# guide file
+# Guide file
 selecting.dat <- read.delim2(file = "00_archive/locus_selection_w_index.txt"
                              , header = T)
 colnames(selecting.dat)
 head(selecting.dat)
 dim(selecting.dat) #296 records
 
-# empirical data file
-### TODO ### AUTOMATE MULTIPLE FILES
-rubias.all.df <- NULL; rubias.all <- NULL
+# Empirical data file
+
+### LOOP SECTION 
+# ### TODO ### AUTOMATE MULTIPLE FILES
+# rubias.all.df <- NULL; rubias.all <- NULL
+# 
+# #### START LOOP #####
+# data.files <- list.files(path = "06_vcf", pattern = "var_w_index_selected.txt")
+# data.files
+
+# sample <- NULL
+# for(d in 1:length(data.files)){
+#   sample <- gsub(data.files[d], pattern = "\\_.*", replacement = "")
+#   print(sample)
+
+### END LOOP SECTION
 
 
-#### START LOOP #####
-data.files <- list.files(path = "06_vcf", pattern = "var_w_index_selected.txt")
-data.files
-
-sample <- NULL
-for(d in 1:length(data.files)){
-  sample <- gsub(data.files[d], pattern = "\\_.*", replacement = "")
-  print(sample)
-
+### Import sample file
 input.filename <- paste0("06_vcf/", sample, "_var_w_index_selected.txt")
 print(input.filename)
 
-### 
-  
-vcf.dat <- read.delim2(file = input.filename
-                             , header = T)
+vcf.dat <- read.delim2(file = input.filename, header = T)
 colnames(vcf.dat)
 vcf.dat <- vcf.dat[, c("chrom_pos", "chrom", "pos", "ref", "reads_all", "A", "C", "T", "G")]
 colnames(vcf.dat)
 dim(vcf.dat) #311 records
 
 # Join the two files
-data <- merge(x = vcf.dat, y = selecting.dat, by = "chrom_pos", all.y = F) # all.y will keep all records in guide file
+data <- merge(x = vcf.dat, y = selecting.dat, by = "chrom_pos", all.y = F) # all.y will keep all records in guide file, we don't want that here
 dim(data) 
 
 colnames(data)
@@ -380,7 +386,7 @@ final.leader <- data.frame(final.header, sample.info, stringsAsFactors=FALSE)
 t.final.leader <- t(final.leader)
 
 # Add metadata section to the front of the output dataframe
-rubias.out.df <- cbind(t_final_leader, final.out.df)
+rubias.out.df <- cbind(t.final.leader, final.out.df)
 
 rubias.out.df[1:2,1:10]
 
@@ -393,7 +399,9 @@ write.table(x = rubias.out.df, file = out.filename, sep = ","
             , col.names = F)
 
 
-}
+### BOTTOM OF LOOP SECTION
+# }
+### END BOTTOM OF LOOP SECTION
 
 ### TODO ### Next need to bring back all of these rubias files and join them together
 # test <- read.delim2(file = out.filename, header = T, sep = ",", stringsAsFactors = F)
