@@ -28,39 +28,44 @@ colnames(vcf.dat)
 dim(vcf.dat) #311 records
 
 # Join the two files
-data <- merge(x = vcf.dat, y = selecting.dat, by = "chrom_pos", all.y = TRUE) # all.y will keep all records in guide file
+data <- merge(x = vcf.dat, y = selecting.dat, by = "chrom_pos", all.y = F) # all.y will keep all records in guide file
 dim(data) 
 
 colnames(data)
 head(data)
 
 
-#### 02. Formatting data and sorting into major and minor allele ####
+#### 02. Identifying the major and minor allele ####
+# Solely based on the two nucleotides with the most reads at a site (max alleles)
 # Collect nucleotides per locus and sort in order of nucleotide count 
-# set nulls
+
+# Identify two max alleles
 genos <- NULL; arr.genos <- list() ; chr <- NULL
 
 for(i in 1:nrow(data)){
   print(i)
   
-  # select the two max alleles
+  # Per row, pull out the nucleotide coverage
   genos <- data[i, c("A","C","T","G")]
   print(genos)
-  genos <- t(genos) # transpose to sort by count
+  
+  # Transpose to sort by count
+  genos <- t(genos) 
   print(genos)
   
-  # save the chromosome name of interest
+  # Collect the chromosome name of interest
   chr <- data$chrom_pos[i]
   chr <- as.character(chr)
   print(chr)
   
+  # Save ordered nucleotides
   arr.genos[[ chr ]] <- genos[order(genos),] 
 }
 
 arr.genos
 
 
-# Collect data out of list
+# Collect data from list into dataframe
 top.genos.df <- NULL; chr <- NULL; temp <- NULL; top.genos <- NULL
 top.counts <- NULL; top.counts.df <- NULL
 
@@ -94,10 +99,7 @@ for(i in 1:length(arr.genos)){
 }
 
 
-#top.genos.df
 head(top.genos.df)
-
-#top.counts.df
 head(top.counts.df)
 
 # Combine these two dataframes by rowname
@@ -109,26 +111,16 @@ all.data <- all.data[ , -(which(colnames(all.data)=="Row.names"))]
 colnames(all.data) <- c("min", "maj", "r.min", "r.maj")
 head(all.data)
 
-# Make data.frame
-all.data.df <- as.data.frame(as.matrix(all.data))
+# Convert to dataframe
+all.data.df <- as.data.frame(as.matrix(all.data), stringsAsFactors = F)
 head(all.data.df)
 str(all.data.df)
 
-## All values are factors, so...
-# Coerce counts to numeric
-all.data.df$r.min <- as.numeric(as.character(all.data.df$r.min))
-all.data.df$r.maj <- as.numeric(as.character(all.data.df$r.maj))
+# Counts as numeric
+all.data.df$r.min <- as.numeric(all.data.df$r.min)
+all.data.df$r.maj <- as.numeric(all.data.df$r.maj)
 
-# Coerce factor to character
-all.data.df$min <- as.character(all.data.df$min)
-all.data.df$maj <- as.character(all.data.df$maj)
-
-str(all.data.df)
-
-head(all.data.df)
-
-
-## Order dataframe to show major then minor allele as largest then second largest
+## Re-order columns
 all.data.df <- all.data.df[ , c("maj", "r.maj", "min", "r.min") ]
 head(all.data.df)
 
@@ -142,6 +134,7 @@ head(all.data.df)
 
 
 #### 04. Bin genotypes into homozygote or heterozygote ####
+# Based on allelic ratio, identify heterozygous or homozygous calls
 snp.call <- NULL; 
 
 for(i in 1:nrow(all.data.df)){
@@ -161,7 +154,6 @@ for(i in 1:nrow(all.data.df)){
 }
 
 head(all.data.df, n = 10)
-
 # Note: this will never produce a homozygote minor, due to the ordering of alleles by read count above
 
 
@@ -171,12 +163,13 @@ print(paste0("your chosen threshold is = ", threshold))
 
 # Set true/false whether locus is kept or removed based on threshold
 for(i in 1:nrow(all.data.df)){
+  
+  # If reads are greater than threshold
   if(all.data.df$r.maj[i] + all.data.df$r.min[i] > threshold){
     all.data.df$keep[i] <- "TRUE"
+    
   } else all.data.df$keep[i] <- "FALSE"
 }
-
-### TODO ### This throws an error due to NA values, need to fix that. 
 
 all.data.df
 
@@ -192,16 +185,17 @@ table(all.data.df$keep)
 
 
 #### 06. Make genotypes column ####
+# Make two vectors, genos1 and genos2 that contain the allele based on the allelic ratio call above
 genos1 <- NULL; genos2 <- NULL
 
 for(i in 1:nrow(all.data.df)){
   if(all.data.df$snp.call[i]=="homo.maj"){
-    #print("homo.maj")
+    
     genos1[i] <- all.data.df$maj[i] # put major allele as genos1
     genos2[i] <- all.data.df$maj[i] # put major allele as genos2
     
   } else if(all.data.df$snp.call[i]=="het"){
-    #print("het")
+    
     genos1[i] <- all.data.df$maj[i] # put major allele as genos1
     genos2[i] <- all.data.df$min[i] # put minor allele as genos2
   }
@@ -217,23 +211,28 @@ all.data.df$genos2 <- genos2
 
 head(all.data.df)
 
-
-# Connect back to the guide file
+##### 07. Identify actual genotypes ####
+# Connect to the guide file
 all.data.w.guide.df <- merge(x = all.data.df, y = selecting.dat, by.x = "chr", by.y  = "chrom_pos")
 dim(all.data.w.guide.df) # 296 records
 head(all.data.w.guide.df)
 
 
 ##### Give true geno score w/ hotspot file
+# Use the exact nucleotide to identify the ref or var SNP for homozygous calls
 hotspot.call <- NULL
 
 for(i in 1:nrow(all.data.w.guide.df)){
+  
+  # Make filtered out markers NA
   if(all.data.w.guide.df$keep[i] == FALSE ){
     hotspot.call[i] <- NA
-     
+  
+    # If the two genos aren't the same, it's a het   
   } else if(all.data.w.guide.df$genos1[i]!=all.data.w.guide.df$genos2[i]){
     hotspot.call[i] <- "het"
     
+    # If two genos are the same, check if homozygous ref or var depending on guide file
   } else if( (all.data.w.guide.df$genos1[i]==all.data.w.guide.df$genos2[i]) # is a homozygote 
              && all.data.w.guide.df$genos1[i]==all.data.w.guide.df$ref[i]){ # is a homo.ref
     hotspot.call[i] <- "homo.ref"
@@ -247,19 +246,41 @@ for(i in 1:nrow(all.data.w.guide.df)){
 # TODO: confirm this het is the same as the expected het, otherwise throw NA #
 
 hotspot.call
+
+table(hotspot.call) # shows the number of markers with each call
+
+table(is.na(hotspot.call)) # shows the number of dropped due to low coverage
+
 all.data.w.guide.w.hotspot.call.df <- cbind(all.data.w.guide.df, hotspot.call)
 head(all.data.w.guide.w.hotspot.call.df, n = 10)
 
 
-##### 07. Convert to Rubias format ####
+#### 08. Add dummy rows for markers in guide file not in vcf ####
+dim(all.data.w.guide.w.hotspot.call.df)
+dim(selecting.dat)
+data.w.dummy.rows <- merge(x = all.data.w.guide.w.hotspot.call.df, y = selecting.dat
+                           , by.x = "chr", by.y = "chrom_pos"
+                           , all.y = T) # all.y will keep all records in guide file
+dim(data.w.dummy.rows) 
+tail(data.w.dummy.rows)
+
+# Rename for downstream
+all.data.w.guide.w.hotspot.call.df <- data.w.dummy.rows
+
+##### 09. Convert to Rubias format ####
+# Provide scoring necessary for rubias input
 rubias1 <- NULL; rubias2 <- NULL
 #scoring: homo.ref = 1,1 ; het = 1,2 ; homo.var = 2,2 
 
-# Loop 
+# Convert to rubias format based on hotspot.call
 for(i in 1:nrow(all.data.w.guide.w.hotspot.call.df)){
-  if(all.data.w.guide.w.hotspot.call.df$keep[i] == FALSE){
+  
+  # Any locus that was removed by filter or not found at all
+  if(is.na(all.data.w.guide.w.hotspot.call.df$hotspot.call[i]) == TRUE){
     rubias1[i] <- NA
-    rubias2[i] <- NA ### MAY REMOVE THIS, NOT WORKING PROPERLY
+    rubias2[i] <- NA
+    
+    # otherwise use the hotspot call to code in rubias format
   } else if(all.data.w.guide.w.hotspot.call.df$hotspot.call[i]=="homo.ref"){
     rubias1[i] <- 1
     rubias2[i] <- 1  
@@ -276,9 +297,12 @@ complete.df <- cbind(all.data.w.guide.w.hotspot.call.df, rubias1, rubias2)
 
 head(complete.df)
 
-### Hacky below ###
-rubias.only.1 <- complete.df[, c("chrom", "rubias1")]
-rubias.only.2 <- complete.df[, c("chrom", "rubias2")]
+
+#### 10. Convert long form to wide form ####
+### Make long form into horizontal form ###
+## TODO ## Fix this section up
+rubias.only.1 <- complete.df[, c("chrom.y", "rubias1")]
+rubias.only.2 <- complete.df[, c("chrom.y", "rubias2")]
 
 rownames(rubias.only.1) <- rubias.only.1$chrom
 rownames(rubias.only.2) <- paste0(rubias.only.1$chrom, "_1")
@@ -286,9 +310,11 @@ rownames(rubias.only.2) <- paste0(rubias.only.1$chrom, "_1")
 head(rubias.only.1)
 head(rubias.only.2)
 
+# Transpose
 t.x.1 <- t(rubias.only.1)
 t.x.2 <- t(rubias.only.2)
 
+# View data
 t.x.1[1:2, 1:5]
 t.x.2[1:2, 1:5]
 
@@ -318,29 +344,26 @@ final.out.df <- rbind(names(output.df.t), output.df.t)
 dim(final.out.df)
 final.out.df[1:2,1:5]
 
-### Missing: sample_type, collection, repunit, indiv
-final_header <- c('sample_type', 'collection', 'repunit', 'indiv')
-BC73_info <- c('mixed','lab',NA, 'BC73')
-final_leader <- data.frame(final_header, BC73_info, stringsAsFactors=FALSE)
+#### 11. Add metadata to rubias output ####
+## Add header info: sample_type, collection, repunit, indiv
+final.header <- NULL; sample.info <- NULL
+final.header <- c("sample_type", "collection", "repunit", "indiv")
+sample.info <- c("mixed", "lab", NA, "sample.x") ## Change sample.x to be the rep of the loop
+
+final_leader <- data.frame(final_header, sample.info, stringsAsFactors=FALSE)
 t_final_leader <- t(final_leader)
-final_rubias_out.df <- cbind(t_final_leader, final.out.df)
+
+# Add metadata section to the front of the output dataframe
+rubias.out.df <- cbind(t_final_leader, final.out.df)
+
+rubias.out.df[1:2,1:10]
+
+##### THEN BIND THIS ON TO THE PRECEDING RUN #####
 
 
 ### Data available in output.df.t
 write.table(x = final_rubias_out.df, file = "rubias_inputBC73.csv", sep=",", row.names = F, col.names = F)
 
-
-
-
 # Export results
 write.csv(x = all.data.df, file = "06_vcf/genotypes.csv", row.names = F)
 write.csv(x = all.data.w.guide.df, file = "temp.csv")
-
-
-
-
-
-
-
-
-
