@@ -31,7 +31,9 @@ do
     name=$(basename $file)
 
     # Use the locus selection file to only retain selected loci
-    grep -f $CHR_POS_NAME_ONLY $INPUT_FOLDER/$name > $INPUT_FOLDER/"${name%.txt}"_selected.txt
+    cat $CHR_POS_NAME_ONLY | 
+        awk '{ print $1"\t" }' - |
+        xargs -I{} grep -P {} $INPUT_FOLDER/$name > $INPUT_FOLDER/"${name%.txt}"_selected.txt 
 
 done
 

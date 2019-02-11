@@ -13,6 +13,7 @@ CHR_POS_NAME_ONLY="00_archive/locus_selection_w_index_name_only.txt"
 # Create new column in locus file for selecting data
 awk '{ print $1"_"$2 "\t" $0 }' 00_archive/$LOCUS_FILE > $CHR_POS_FILE
 
-# Create a locus selecting file that has only the index column 
+# Create a locus selecting file that has only the index column
+# This file is what is used for grep 
 awk '{ print $1 }' $CHR_POS_FILE > $CHR_POS_NAME_ONLY 
 
