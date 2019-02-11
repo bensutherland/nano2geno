@@ -16,7 +16,7 @@ sample <- NULL
 
 # Import each file and combine into a single dataframe
 for(i in 1:length(data.files)){
-  sample <- gsub(data.files[d], pattern = "\\_.*", replacement = "")
+  sample <- gsub(data.files[i], pattern = "\\_.*", replacement = "")
   print(sample)
   
   # Set filename
