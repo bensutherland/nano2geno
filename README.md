@@ -33,6 +33,10 @@ If you have an external library barcode, or don't care what barcode was on your 
 Combine all data from a single run 
 `cat 03_basecalled/*.fastq > 03_basecalled/all_reads.fastq`      
 
+If read number exeeds 550k, split into subfiles in subfolder (sub_x) of aproximately 100 files (4000 reads per file) to preserve RAM during porechop demultiplexing. 
+`ls -Q fastq_pass/ | head -100 | xargs -i mv fastq_pass/{} fastq_pass/sub_1/`
+Run porechop accordingly on subfiles
+
 How many reads are present?    
 `grep -cE '^\+$' 03_basecalled/all_reads.fastq`     
 
@@ -113,6 +117,10 @@ Now run porechop to de-multiplex samples based on all 96 barcodes, search extra 
 
 Then rename the used barcode file back to it's original name:     
 `mv ~/Programs/Porechop/porechop/adapters.py ~/Programs/Porechop/porechop/adapters-3.py`     
+
+If using subfolders, use "01c_cat_subsets" to compile all binned reads into combined folder (adjust to fit number of subdirectories).
+`mkdir all_decat_cat`
+`01_scripts/01c_cat_subsets.sh`
 
 Move the demultiplexed samples into the appropriate folder.    
 `cp -l 03b_demultiplexed/*.fastq 04_samples`      
