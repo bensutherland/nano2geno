@@ -2,7 +2,7 @@
 # Join the two types of barcode-called data, forward and reverse 
 
 # System variables
-SAMPLES_FOLDER="04_samples"
+SAMPLES_FOLDER="03b_demultiplexed/all_decat_cat"
 
 # User-defined variables
 THREADS="7"
