@@ -9,7 +9,7 @@ MAPPED_FOLDER="04_mapped"
 THREADS="8"
 #GENOME="/home/ben/Documents/genomes/GCF_002872995.1_Otsh_v1.0_genomic.fna"
 #GENOME="/home/ben/Documents/01_nanopore/nano2geno/02b_genome/GCF_002021735.1_Okis_V1_genomic.fna"
-GENOME="02b_genome/Ots_amplicons_rubias_no-N.fa"
+GENOME="02b_genome/Oki_amps.fa"
 
 # Align with minimap2 (requires that ref is indexed) 
 for file in $(ls -1 $SAMPLE_FOLDER/*.fastq )
@@ -19,7 +19,7 @@ do
     name=$(basename $file)
 
     # Align fastq
-    minimap2 -ax map-ont $GENOME $SAMPLE_FOLDER/$name | 
+    bwa mem $GENOME $SAMPLE_FOLDER/$name | 
         samtools view -bS -q 2 - | 
         samtools sort -o $MAPPED_FOLDER/"${name%.fastq}".bam -
 
