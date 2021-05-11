@@ -7,7 +7,7 @@ INPUT_FOLDER="06_vcf"
 
 # User-defined variables
 THREADS="8"
-GENOME="02b_genome/Ots_amplicons_rubias_no-N.fa"
+GENOME="02b_genome/Oki_amps.fa"
 CHR_POS_FILE="00_archive/locus_selection_w_index.txt"
 CHR_POS_NAME_ONLY="00_archive/locus_selection_w_index_name_only.txt"
 

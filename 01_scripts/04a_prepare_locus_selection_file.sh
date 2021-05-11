@@ -3,7 +3,7 @@
 # chrom \t pos \t ref \t var 
 
 # User-defined variables
-LOCUS_FILE="Ots_amplicon_names_rubias_SNP_location_ref_var.txt"
+LOCUS_FILE="Oki_amps_name_pos_ref_var.txt"
 
 # System variables (don't change)
 INPUT_FOLDER="06_vcf"

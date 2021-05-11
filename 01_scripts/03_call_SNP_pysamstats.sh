@@ -7,7 +7,7 @@ OUTPUT_FOLDER="06_vcf"
 
 # User-defined variables
 THREADS="8"
-GENOME="02b_genome/Ots_amplicons_rubias_no-N.fa"
+GENOME="02b_genome/Oki_amps.fa"
 
 # Calling all nucleotide position variants using pysamstats 
 for file in $(ls -1 $INPUT_FOLDER/*.bam )
