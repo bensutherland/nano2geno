@@ -1,11 +1,11 @@
 # nano2geno
 SNP genotyping and stock ID from nanopore data after concatenation of amplicon libraries     
-C: Benjamin Sutherland and Christoph Deeg     
+C: Ben J. G. Sutherland and Christoph Deeg     
 
 Currently in **Development mode only**     
-Disclaimer: This is pipeline comes as is, with no guarantees. At the moment it is purely for the author's use to explore the suitability of in field SNP genotypin
-#### Requirementsg and stock ID using the nanopore plattform.   
+Disclaimer: This is pipeline comes as is, with no guarantees. At the moment it is purely for the authors' use to explore the suitability of in-field SNP genotyping     
 
+#### Requirements and stock ID using the nanopore platform.       
 Minknow: Data collection and basecalling (alternatively use Albacore to create fastq files from fast5)     
 Porechop https://github.com/rrwick/Porechop      
 minimap2    
@@ -23,11 +23,10 @@ Rubias baseline data of SNP distribution in reference populations
 
 
 ### 1. Prepare sequencing data
-
 Copy files from ONT sequencing run folder fastq_pass into 03_basecalled.       
-`cp xxx/fastq_pass/*.fastq 03_basecalled`
+`cp xxx/fastq_pass/*.fastq 03_basecalled`    
 
-Combine all data from a single run:
+Combine all data from a single run:      
 `cat 03_basecalled/*.fastq > 03_basecalled/all_reads.fastq`      
 
 How many reads are present?    
@@ -35,30 +34,30 @@ How many reads are present?
 
 If using limited resources (e.g. laptop in field), split reads into subfiles in subfolder (sub_x) to preserve RAM during porechop deconcatenation and demultiplexing.
 In our case, Ubuntu 14.06, 31.2 GiB RAM 7700K CPU @ 4.20GHz × 8, files with read numbers exeeding 550k need to be split into sub folders of aproximately 100 files (4000 reads per file). 
-`ls -Q fastq_pass/ | head -100 | xargs -i mv fastq_pass/{} fastq_pass/sub_1/`
+`ls -Q fastq_pass/ | head -100 | xargs -i mv fastq_pass/{} fastq_pass/sub_1/`     
 
-Then concatenate as above:
-`cat 03_basecalled/sub_x/*.fastq > 03_basecalled/sub_x/all_sub_x_reads.fastq`
+Then concatenate as above:     
+`cat 03_basecalled/sub_x/*.fastq > 03_basecalled/sub_x/all_sub_x_reads.fastq`     
 
-If subsetting, adjust accodingly below (e.g. run commands in each sub folder).    
+If subsetting, adjust accordingly below (e.g. run commands in each sub folder).    
 
 
 ### 2. Data quality check
 Run fastqc on this data:    
-`fastqc 03_basecalled/all_reads.fastq -o 03_basecalled/fastqc -t 5`   
-`multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc`    
+```
+fastqc 03_basecalled/all_reads.fastq -o 03_basecalled/fastqc -t 5   
+multiqc -o 03_basecalled/fastqc/ 03_basecalled_fastqc    
+```
 
-
-### 3. De-multiplex and deconcatenationg with Porechop
-Disclaimer: We are currently using different adapter files (adapters-1.py, adapters-2.py, etc; within porechop) and rename (adapters.py) before each step (might get automated in future).
+### 3. De-multiplex and deconcatenation with Porechop
+Disclaimer: We are currently using different adapter files (adapters-1.py, adapters-2.py, etc; within porechop) and rename (adapters.py) before each step (might get automated in future).     
 
 #### 3a. De-multiplex using external library barcodes (optional, if sequencing >96 samples)
 First we want to de-multiplex concatenated reads by library, according to the external library ID barcode.      
 To do this, edit the adapter file to remove all of the adapters that are not used as external library ID adapters.      
 To exclued all individual ID barcodes is paramount to avoid porechop from discarding concatenated reads due to middle adapters.      
 
-
-To prepare for de-multiplex step one, rename adapters-1.py (containing only the library ID barcodes) to adapters.py
+To prepare for de-multiplex step one, rename adapters-1.py (containing only the library ID barcodes) to adapters.py     
 `mv ~/Programs/Porechop/porechop/adapters-1.py ~/Programs/Porechop/porechop/adapters.py`     
 
 Demultiplex using the external library ID barcodes:      
@@ -86,8 +85,7 @@ To prepare for the final de-multiplexing and binning step (de-multiplex by indiv
 Now run porechop to de-multiplex and bin samples based on all 96 barcodes. Search 100000 reads to identify all used barcodes.      
 `~/Programs/Porechop/porechop-runner.py -i 03a_demultiplex_library/BC96_deconcat.fastq -b 03b_demultiplexed/ -t 16 --adapter_threshold 90 --end_threshold 75 --check_reads 100000`      
 
-
-Then rename the used barcode file back to it's original name:     
+Then rename the used barcode file back to its original name:     
 `mv ~/Programs/Porechop/porechop/adapters.py ~/Programs/Porechop/porechop/adapters-3.py`     
 
 
@@ -97,10 +95,8 @@ If using subfolders to preserve RAM, run "01c_cat_subsets.sh" to compile all bin
 `./01_scripts/01c_cat_subsets.sh`
 
 #### 3e. Prepare files for next steps
-
 Move the demultiplexed and binned reads into the appropriate folder.    
 `cp -l 03b_demultiplexed/*.fastq 04_samples`      
-
 
 ### 4. Align against reference regions
 The demultiplexed fastq files are in `04_samples`.     
@@ -113,7 +109,6 @@ Set the genome variable and use minimap2 and samtools to align fastq samples in 
 This will produce stat files as well as indexed and sorted bam files.    
 
 ### 5. Call variants 
-
 #### 5.a. Identify nucleotides at all loci with pysamstats
 This will use the reference and all bam files in `04_mapped`.     
 Set the reference variable to the appropriate file and run pysamstats and output the nucleotides found at every position in all aligned sample files.    
@@ -150,4 +145,4 @@ Then run the following script to collect all input data and put into a single da
 
 #### 7. Rubias
 
-Now run the rubias R script for stock ID `01_scripts/07_Rubias_GSI-script-NA.R` 
+Now run the rubias R script for stock ID `01_scripts/07_Rubias_GSI-script-NA.R`      
