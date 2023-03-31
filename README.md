@@ -3,7 +3,8 @@ SNP genotyping and stock ID from nanopore data after concatenation of amplicon l
 C: Ben J. G. Sutherland and Christoph Deeg     
 
 Currently in **Development mode only**     
-Disclaimer: This is pipeline comes as is, with no guarantees. At the moment it is purely for the authors' use to explore the suitability of in-field SNP genotyping     
+Disclaimer: This is pipeline comes as is, with no guarantees. At the moment it is purely for the authors' use to explore the suitability of in-field SNP genotyping. Please note that this code was used primarily for the following work, and has not been tested on any broader application:     
+[Deeg et al., 2022. Mol. Ecol. Res.](https://onlinelibrary.wiley.com/doi/full/10.1111/1755-0998.13595)       
 
 #### Requirements and stock ID using the nanopore platform.       
 Minknow: Data collection and basecalling (alternatively use Albacore to create fastq files from fast5)     
